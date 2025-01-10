@@ -52,6 +52,8 @@ const LoginPopUp = ({ setShowLogin }) => {
         return;
       }
       window.alert(currState === "Sign Up" ? 'Registration successful!' : 'Login successful!');
+      localStorage.setItem("token",result.token)
+      setShowLogin(false)
     } catch (error) {
       window.alert('Could not connect to the server.');
     }
@@ -133,7 +135,7 @@ const LoginPopUp = ({ setShowLogin }) => {
             </div>
           )}
         </div>
-        <button>{currState === "Sign Up" ? "Create Account" : "Login"}</button>
+        <button type='submit'>{currState === "Sign Up" ? "Create Account" : "Login"}</button>
         <div className="login-popup-toggle">
           <p>
             {currState === "Sign Up"

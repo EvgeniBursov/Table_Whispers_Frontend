@@ -19,3 +19,8 @@
     font-size: 14px;
     animation: fadeIn 0.5s;
 }
+.login-popup-title img {
+    width: 20px;  /* Adjust width */
+    height: 20px; /* Adjust height */
+    cursor: pointer; /* Makes the icon clickable */
+  }

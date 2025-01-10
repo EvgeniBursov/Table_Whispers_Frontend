@@ -21,3 +21,25 @@
 .navbar button:hover{
     background-color: antiquewhite;
 }
+.navbar-profile img {
+    width: 45px;  /* Adjust width */
+    height: 45px; /* Adjust height */
+  }
+.navbar-profile{
+    position: relative;
+}
+.nav-profile-dropdown{
+    position: absolute;
+    display: none;
+    right: 0;
+    z-index: 1;
+}
+.navbar-profile:hover .nav-profile-dropdown{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: #fff2ef;
+    padding: 12px 25px;
+    border-radius: 4px;
+
+}
