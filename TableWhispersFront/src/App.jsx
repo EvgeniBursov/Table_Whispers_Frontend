@@ -1,17 +1,22 @@
 import React, { useState } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar/Navbar'
 import LoginPopUp from './components/LoginPopUp/loginPopUp'
+import ClientProfile from './pages/ClientProfile/profile'
 
 const App = () => {
   const [showLogin, setShowLogin] = useState(false)
   
   return (
-    <>
+    <BrowserRouter>
       {showLogin ? <LoginPopUp setShowLogin={setShowLogin} /> : null}
       <div className='app'>
         <Navbar setShowLogin={setShowLogin} />
+        <Routes>
+          <Route path="/profile" element={<ClientProfile />} />
+        </Routes>
       </div>
-    </>
+    </BrowserRouter>
   )
 }
 
