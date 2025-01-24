@@ -1,73 +1,125 @@
-import React, {useState} from "react";
+import React, { useState, useEffect } from "react";
+import { assets } from "../../assets/assets";
 import "./profile.css";
 
 const ClientProfile = () => {
-  const profile = {
-    firstName: "ישראל",
-    lastName: "ישראלי",
-    age: 30,
-    email: "israel@example.com",
-    phoneNumber: "050-1234567",
-    profileImage: "https://via.placeholder.com/150",
-    allergies: ["בוטנים", "חלב", "ביצים"],
-    upcomingReservations: [
-      {
-        _id: 1,
-        date: "2024-02-01",
-        time: "19:00",
-        numberOfGuests: 4,
-        specialRequests: "שולחן ליד החלון"
-      },
-      {
-        _id: 2,
-        date: "2024-02-15",
-        time: "20:30",
-        numberOfGuests: 2
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("upcoming");
+  const [password, setPassword] = useState("");
+  const [confirm_password, setConfirmPassword] = useState("");
+
+  const email = "testbursov19951@gmail.com"; // Email to pass as query parameter
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token"); // If you need authentication
+        const response = await fetch(
+          `http://localhost:5000/userProfile?email=${email}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`, // Optional: Include token for auth
+            },
+          }
+        );
+        if (!response.ok) throw new Error("Failed to fetch profile");
+        const data = await response.json();
+        console.log(data);
+        setProfile(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
       }
-    ],
-    pastReservations: [
-      {
-        _id: 3,
-        date: "2024-01-10",
-        time: "18:00",
-        numberOfGuests: 3
-      },
-      {
-        _id: 4,
-        date: "2024-01-05",
-        time: "19:30",
-        numberOfGuests: 6,
-        specialRequests: "תפריט טבעוני"
+    };
+
+    fetchProfile();
+  }, [email]); // Dependency array includes `email`
+
+  const handlePasswordChange = async () => {
+    if (password !== confirm_password) {
+      alert("Passwords do not match!");
+      return;
+    }
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/resetClientPassword", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email, password, confirm_password }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error);
+        return;
+      }else{
+        alert(data.message)
       }
-    ]
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update password.");
+    }
   };
 
-  const [activeTab, setActiveTab] = useState('upcoming');
+  const handleDeleteProfile = async () => {
+    const confirmation = window.confirm("Are you sure you want to delete your profile?");
+    if (!confirmation) return;
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/deleteClientProfile", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email }),
+      });
+      if (!response.ok) throw new Error("Failed to delete profile");
+      alert("Profile deleted successfully!");
+      localStorage.removeItem("token");
+      window.location.reload(); // Redirect or refresh the page
+    } catch (error) {
+      console.error(error);
+      alert("Failed to delete profile.");
+    }
+  };
+
+  if (loading) return <div className="loading">Loading...</div>;
+  if (!profile) return <div className="error">No profile data found</div>;
 
   return (
     <div className="profile-container">
-      {/* מידע אישי */}
+      {/* Personal Information */}
       <div className="profile-card">
         <div className="profile-header">
-          {/* תמונת פרופיל */}
+          {/* Profile Picture */}
           <div className="profile-image">
-            <img src={profile.profileImage} alt="Profile" />
+            <img src={profile.profileImage || assets.person_logo} alt="Profile" />
           </div>
-          
-          {/* פרטים אישיים */}
+
+          {/* Personal Details */}
           <div className="profile-details">
-            <h1>{profile.firstName} {profile.lastName}</h1>
+            <h1>
+              {profile.first_name} {profile.last_name}
+            </h1>
             <div className="details-grid">
               <div className="detail-item">
-                <p className="detail-label">גיל</p>
+                <p className="detail-label">Age</p>
                 <p className="detail-value">{profile.age}</p>
               </div>
               <div className="detail-item">
-                <p className="detail-label">טלפון</p>
-                <p className="detail-value">{profile.phoneNumber}</p>
+                <p className="detail-label">Phone Number</p>
+                <p className="detail-value">{profile.phone_number}</p>
               </div>
               <div className="detail-item">
-                <p className="detail-label">דוא"ל</p>
+                <p className="detail-label">Email</p>
                 <p className="detail-value">{profile.email}</p>
               </div>
             </div>
@@ -75,57 +127,85 @@ const ClientProfile = () => {
         </div>
       </div>
 
-      {/* אלרגיות */}
+      {/* Allergies */}
       <div className="profile-card">
-        <h2>אלרגיות</h2>
+        <h2>Allergies</h2>
         {profile.allergies && profile.allergies.length > 0 ? (
           <div className="allergies-container">
             {profile.allergies.map((allergy, index) => (
-              <span key={index} className="allergy-tag">{allergy}</span>
+              <span key={index} className="allergy-tag">
+                {allergy}
+              </span>
             ))}
           </div>
         ) : (
-          <p className="no-data">לא נרשמו אלרגיות</p>
+          <p className="no-data">No allergies recorded</p>
         )}
       </div>
 
-      {/* הזמנות */}
+      {/* Orders */}
       <div className="profile-card">
-        <h2>הזמנות</h2>
+        <h2>Orders</h2>
         <div className="tabs">
-          <button 
-            className={`tab-button ${activeTab === 'upcoming' ? 'active' : ''}`}
-            onClick={() => setActiveTab('upcoming')}
+          <button
+            className={`tab-button ${activeTab === "upcoming" ? "active" : ""}`}
+            onClick={() => setActiveTab("upcoming")}
           >
-            הזמנות עתידיות
+            Upcoming Orders
           </button>
-          <button 
-            className={`tab-button ${activeTab === 'past' ? 'active' : ''}`}
-            onClick={() => setActiveTab('past')}
+          <button
+            className={`tab-button ${activeTab === "past" ? "active" : ""}`}
+            onClick={() => setActiveTab("past")}
           >
-            הזמנות קודמות
+            Past Orders
           </button>
         </div>
-        
+
         <div className="reservations-list">
-          {activeTab === 'upcoming' ? (
+          {activeTab === "upcoming" ? (
             profile.upcomingReservations?.length > 0 ? (
-              profile.upcomingReservations.map(reservation => (
+              profile.upcomingReservations.map((reservation) => (
                 <ReservationCard key={reservation._id} reservation={reservation} />
               ))
             ) : (
-              <p className="no-data">אין הזמנות עתידיות</p>
+              <p className="no-data">No upcoming orders</p>
             )
+          ) : profile.pastReservations?.length > 0 ? (
+            profile.pastReservations.map((reservation) => (
+              <ReservationCard key={reservation._id} reservation={reservation} />
+            ))
           ) : (
-            profile.pastReservations?.length > 0 ? (
-              profile.pastReservations.map(reservation => (
-                <ReservationCard key={reservation._id} reservation={reservation} />
-              ))
-            ) : (
-              <p className="no-data">אין הזמנות קודמות</p>
-            )
+            <p className="no-data">No past orders</p>
           )}
         </div>
+      </div>
+
+      {/* Change Password */}
+      <div className="profile-card">
+        <h2>Change Password</h2>
+        <div className="password-form">
+          <input
+            type="password"
+            placeholder="New Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <input
+            type="password"
+            placeholder="Confirm Password"
+            value={confirm_password}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+          <button onClick={handlePasswordChange}>Update Password</button>
+        </div>
+      </div>
+
+      {/* Delete Profile */}
+      <div className="profile-card">
+        <h2>Delete Profile</h2>
+        <button className="delete-button" onClick={handleDeleteProfile}>
+          Delete My Profile
+        </button>
       </div>
     </div>
   );
@@ -136,15 +216,16 @@ const ReservationCard = ({ reservation }) => {
     <div className="reservation-card">
       <div className="reservation-header">
         <p className="reservation-date">
-          {new Date(reservation.date).toLocaleDateString('he-IL')} בשעה {reservation.time}
+          {new Date(reservation.date).toLocaleDateString("he-IL")} at {reservation.time}
         </p>
         <p className="guests-count">
-          {reservation.numberOfGuests} {reservation.numberOfGuests === 1 ? 'סועד' : 'סועדים'}
+          {reservation.numberOfGuests}{" "}
+          {reservation.numberOfGuests === 1 ? "Guest" : "Guests"}
         </p>
       </div>
       {reservation.specialRequests && (
         <p className="special-requests">
-          בקשות מיוחדות: {reservation.specialRequests}
+          Special Requests: {reservation.specialRequests}
         </p>
       )}
     </div>
