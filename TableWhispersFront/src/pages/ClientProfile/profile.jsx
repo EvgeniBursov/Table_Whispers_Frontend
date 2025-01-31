@@ -4,12 +4,14 @@ import "./profile.css";
 
 const ClientProfile = () => {
   const [profile, setProfile] = useState(null);
+  const [allergies, setAllergies] = useState([]); // Store allergies list
+  const [selectedAllergy, setSelectedAllergy] = useState(""); // Selected allergy
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("upcoming");
   const [password, setPassword] = useState("");
   const [confirm_password, setConfirmPassword] = useState("");
 
-  const email = "testbursov19951@gmail.com"; // Email to pass as query parameter
+  const email = "bursov19951@gmail.com"; // Email to pass as query parameter
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -36,7 +38,24 @@ const ClientProfile = () => {
       }
     };
 
-    fetchProfile();
+    const fetchAllergies = async () => {
+      try {
+        console.log("Fetching allergies...");
+        const response = await fetch("http://localhost:5000/getListOfAllergies");
+        if (!response.ok) throw new Error("Failed to fetch allergies");
+        
+        const data = await response.json();
+        console.log("Allergies data received:", data); // תראה אם התקבלו הנתונים כראוי
+        setAllergies(data); // עדכון האלרגיות
+      } catch (error) {
+        console.error("Error fetching allergies:", error); // נרצה לראות אם יש שגיאה
+      }
+    };
+    
+
+    fetchProfile()
+    fetchAllergies();
+    
   }, [email]); // Dependency array includes `email`
 
   const handlePasswordChange = async () => {
@@ -128,20 +147,40 @@ const ClientProfile = () => {
       </div>
 
       {/* Allergies */}
-      <div className="profile-card">
-        <h2>Allergies</h2>
-        {profile.allergies && profile.allergies.length > 0 ? (
-          <div className="allergies-container">
-            {profile.allergies.map((allergy, index) => (
-              <span key={index} className="allergy-tag">
-                {allergy}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="no-data">No allergies recorded</p>
-        )}
+<div className="profile-card">
+  <h2>Allergies</h2>
+  
+    {/* Allergies Dropdown */}
+    <div className="profile-card-dropdown">
+      <h3>Select an Allergy</h3>
+      <select 
+          value={selectedAllergy} 
+          onChange={(e) => setSelectedAllergy(e.target.value)} 
+          className="allergy-select"
+        >
+          <option value="">Select an allergy</option>
+          {allergies.map((allergy, index) => (
+            <option key={index} value={allergy.name}>
+              {allergy.name}
+            </option>
+          ))}
+    </select>
+      {selectedAllergy && <p className="selected-allergy">Selected Allergy: {selectedAllergy}</p>}
+    </div>
+
+    {/* Display Allergies from Profile */}
+    {profile.allergies && profile.allergies.length > 0 ? (
+      <div className="allergies-container">
+        {profile.allergies.map((allergy, index) => (
+          <span key={index} className="allergy-tag">
+            {allergy}
+          </span>
+        ))}
       </div>
+    ) : (
+      <p className="no-data">No allergies recorded</p>
+    )}
+  </div>
 
       {/* Orders */}
       <div className="profile-card">
@@ -196,16 +235,18 @@ const ClientProfile = () => {
             value={confirm_password}
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
-          <button onClick={handlePasswordChange}>Update Password</button>
+          <button className="update-button" onClick={handlePasswordChange}>Update Password</button>
         </div>
       </div>
 
       {/* Delete Profile */}
       <div className="profile-card">
         <h2>Delete Profile</h2>
+        <div className="delete-form">
         <button className="delete-button" onClick={handleDeleteProfile}>
           Delete My Profile
         </button>
+      </div>
       </div>
     </div>
   );
