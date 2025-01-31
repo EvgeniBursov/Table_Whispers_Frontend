@@ -10,6 +10,8 @@ const ClientProfile = () => {
   const [activeTab, setActiveTab] = useState("upcoming");
   const [password, setPassword] = useState("");
   const [confirm_password, setConfirmPassword] = useState("");
+  const [pastOrders, setPastOrders] = useState([]); // Store past orders
+  const [upcomingOrders, setUpcomingOrders] = useState([]); // Store upcoming orders
 
   const email = "bursov19951@gmail.com"; // Email to pass as query parameter
 
@@ -31,6 +33,10 @@ const ClientProfile = () => {
         const data = await response.json();
         console.log(data);
         setProfile(data);
+        const pastOrders = data.orders.filter(order => order.status === "Done");
+        const upcomingOrders = data.orders.filter(order => order.status === "Planing");
+        setPastOrders(pastOrders);
+        setUpcomingOrders(upcomingOrders);
       } catch (error) {
         console.error(error);
       } finally {
@@ -182,42 +188,61 @@ const ClientProfile = () => {
     )}
   </div>
 
-      {/* Orders */}
-      <div className="profile-card">
-        <h2>Orders</h2>
-        <div className="tabs">
-          <button
-            className={`tab-button ${activeTab === "upcoming" ? "active" : ""}`}
-            onClick={() => setActiveTab("upcoming")}
-          >
-            Upcoming Orders
-          </button>
-          <button
-            className={`tab-button ${activeTab === "past" ? "active" : ""}`}
-            onClick={() => setActiveTab("past")}
-          >
-            Past Orders
-          </button>
-        </div>
+ {/* Orders */}
+<div className="profile-card">
+  <h2>Orders</h2>
+  <div className="tabs">
+    <button
+      className={`tab-button ${activeTab === "upcoming" ? "active" : ""}`}
+      onClick={() => setActiveTab("upcoming")}
+    >
+      Upcoming Orders
+    </button>
+    <button
+      className={`tab-button ${activeTab === "past" ? "active" : ""}`}
+      onClick={() => setActiveTab("past")}
+    >
+      Past Orders
+    </button>
+  </div>
 
-        <div className="reservations-list">
-          {activeTab === "upcoming" ? (
-            profile.upcomingReservations?.length > 0 ? (
-              profile.upcomingReservations.map((reservation) => (
-                <ReservationCard key={reservation._id} reservation={reservation} />
-              ))
-            ) : (
-              <p className="no-data">No upcoming orders</p>
-            )
-          ) : profile.pastReservations?.length > 0 ? (
-            profile.pastReservations.map((reservation) => (
-              <ReservationCard key={reservation._id} reservation={reservation} />
-            ))
-          ) : (
-            <p className="no-data">No past orders</p>
-          )}
-        </div>
-      </div>
+  <div className="reservations-list">
+    {activeTab === "upcoming" ? (
+      profile.orders?.filter(order => order.status === "Planing").length > 0 ? (
+        profile.orders
+          .filter(order => order.status === "Planing")
+          .map((order) => (
+            <div key={order.restaurantName}>
+              <h3>{order.restaurantName}</h3>
+              <p>Restaurant City: {order.restaurantCity}</p>
+              <p>Restaurant Description: {order.restaurantDescription}</p>
+              <p>Restaurant Phone: {order.restaurantPhone}</p>
+              <p>Guests: {order.guests}</p>
+              <p>Order Date: {new Date(order.orderDate).toLocaleDateString()}</p>
+            </div>
+          ))
+      ) : (
+        <p className="no-data">No upcoming orders</p>
+      )
+    ) : profile.orders?.filter(order => order.status === "Done").length > 0 ? (
+      profile.orders
+        .filter(order => order.status === "Done")
+        .map((order) => (
+          <div key={order.restaurantName}>
+            <h3>{order.restaurantName}</h3>
+            <p>Restaurant City: {order.restaurantCity}</p>
+            <p>Restaurant Description: {order.restaurantDescription}</p>
+            <p>Restaurant Phone: {order.restaurantPhone}</p>
+            <p>Guests: {order.guests}</p>
+            <p>Order Date: {new Date(order.orderDate).toLocaleDateString()}</p>
+          </div>
+        ))
+    ) : (
+      <p className="no-data">No past orders</p>
+    )}
+  </div>
+</div>
+
 
       {/* Change Password */}
       <div className="profile-card">
@@ -248,27 +273,6 @@ const ClientProfile = () => {
         </button>
       </div>
       </div>
-    </div>
-  );
-};
-
-const ReservationCard = ({ reservation }) => {
-  return (
-    <div className="reservation-card">
-      <div className="reservation-header">
-        <p className="reservation-date">
-          {new Date(reservation.date).toLocaleDateString("he-IL")} at {reservation.time}
-        </p>
-        <p className="guests-count">
-          {reservation.numberOfGuests}{" "}
-          {reservation.numberOfGuests === 1 ? "Guest" : "Guests"}
-        </p>
-      </div>
-      {reservation.specialRequests && (
-        <p className="special-requests">
-          Special Requests: {reservation.specialRequests}
-        </p>
-      )}
     </div>
   );
 };
