@@ -267,6 +267,112 @@ profile-card-dropdown h3 {
   text-align: right;
 }
 
+.allergies-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.allergy-select {
+  flex: 1;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.add-button {
+  padding: 8px 16px;
+  background: #3f4389;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.allergy-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.remove-button {
+  background: none;
+  border: none;
+  color: #ff4444;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0 4px;
+}
+
+.orders-container {
+  margin-top: 20px;
+ }
+ 
+ .order-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+ }
+ 
+ .order-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+ }
+ 
+ .order-card h3 {
+  font-size: 20px;
+  color: #1a1a1a;
+  margin-bottom: 15px;
+  font-weight: 600;
+ }
+ 
+ .order-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+ }
+ 
+ .order-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+ }
+ 
+ .detail-label {
+  font-size: 14px;
+  color: #666;
+ }
+ 
+ .detail-value {
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+ }
+ 
+ /* Status Tags */
+ .status-tag {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-size: 14px;
+  font-weight: 500;
+ }
+ 
+ .status-planing {
+  background: #e3f2fd;
+  color: #1976d2;
+ }
+ 
+ .status-done {
+  background: #e8f5e9;
+  color: #2e7d32;
+ }
+
+ 
+
 
 /* Responsive Design */
 @media (max-width: 768px) {

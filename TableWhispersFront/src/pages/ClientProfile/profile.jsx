@@ -115,6 +115,41 @@ const ClientProfile = () => {
       alert("Failed to delete profile.");
     }
   };
+  
+  const handleAllergyChange = async (type, allergy = selectedAllergy) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/updateUserAlergic", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          email,
+          name_allergies: allergy, // שינוי - שולח את שם האלרגיה הספציפית
+          type: type
+        })
+      });
+   
+      const data = await response.json();
+      
+      if (!response.ok) throw new Error(data.error || `Failed to ${type} allergy`);
+   
+      setProfile({
+        ...profile,
+        allergies: data.allergies
+      });
+      
+      if (type === "update") {
+        setSelectedAllergy("");
+      }
+   
+    } catch (error) {
+      console.error(error);
+      alert(error.message);
+    }
+   };
 
   if (loading) return <div className="loading">Loading...</div>;
   if (!profile) return <div className="error">No profile data found</div>;
@@ -153,95 +188,140 @@ const ClientProfile = () => {
       </div>
 
       {/* Allergies */}
-<div className="profile-card">
-  <h2>Allergies</h2>
-  
-    {/* Allergies Dropdown */}
-    <div className="profile-card-dropdown">
-      <h3>Select an Allergy</h3>
-      <select 
-          value={selectedAllergy} 
-          onChange={(e) => setSelectedAllergy(e.target.value)} 
-          className="allergy-select"
-        >
-          <option value="">Select an allergy</option>
-          {allergies.map((allergy, index) => (
-            <option key={index} value={allergy.name}>
-              {allergy.name}
-            </option>
-          ))}
-    </select>
-      {selectedAllergy && <p className="selected-allergy">Selected Allergy: {selectedAllergy}</p>}
-    </div>
+      <div className="profile-card">
+ <h2>Allergies</h2>
+ <div className="allergies-form">
+   <select 
+     value={selectedAllergy} 
+     onChange={(e) => setSelectedAllergy(e.target.value)} 
+     className="allergy-select"
+   >
+     <option value="">Select an allergy</option>
+     {allergies.map((allergy) => (
+       <option key={allergy.id} value={allergy.name}>
+         {allergy.name}
+       </option>
+     ))}
+   </select>
+   <button onClick={() => handleAllergyChange("update")} className="add-button">
+     Add Allergy
+   </button>
+ </div>
 
-    {/* Display Allergies from Profile */}
-    {profile.allergies && profile.allergies.length > 0 ? (
-      <div className="allergies-container">
-        {profile.allergies.map((allergy, index) => (
-          <span key={index} className="allergy-tag">
-            {allergy}
-          </span>
-        ))}
-      </div>
-    ) : (
-      <p className="no-data">No allergies recorded</p>
-    )}
-  </div>
+ <div className="allergies-container">
+   {profile.allergies?.map((allergy, index) => (
+     <div key={index} className="allergy-tag">
+       {allergy}
+       <button 
+         onClick={() => handleAllergyChange("remove", allergy)}
+         className="remove-button"
+       >
+         ×
+       </button>
+     </div>
+   ))}
+ </div>
+</div>
 
  {/* Orders */}
+{/* Orders Section */}
 <div className="profile-card">
-  <h2>Orders</h2>
-  <div className="tabs">
-    <button
-      className={`tab-button ${activeTab === "upcoming" ? "active" : ""}`}
-      onClick={() => setActiveTab("upcoming")}
-    >
-      Upcoming Orders
-    </button>
-    <button
-      className={`tab-button ${activeTab === "past" ? "active" : ""}`}
-      onClick={() => setActiveTab("past")}
-    >
-      Past Orders
-    </button>
-  </div>
+       <h2>Orders</h2>
+       <div className="tabs">
+         <button
+           className={`tab-button ${activeTab === "upcoming" ? "active" : ""}`}
+           onClick={() => setActiveTab("upcoming")}
+         >
+           Upcoming Orders
+         </button>
+         <button
+           className={`tab-button ${activeTab === "past" ? "active" : ""}`}
+           onClick={() => setActiveTab("past")}
+         >
+           Past Orders
+         </button>
+       </div>
 
-  <div className="reservations-list">
-    {activeTab === "upcoming" ? (
-      profile.orders?.filter(order => order.status === "Planing").length > 0 ? (
-        profile.orders
-          .filter(order => order.status === "Planing")
-          .map((order) => (
-            <div key={order.restaurantName}>
-              <h3>{order.restaurantName}</h3>
-              <p>Restaurant City: {order.restaurantCity}</p>
-              <p>Restaurant Description: {order.restaurantDescription}</p>
-              <p>Restaurant Phone: {order.restaurantPhone}</p>
-              <p>Guests: {order.guests}</p>
-              <p>Order Date: {new Date(order.orderDate).toLocaleDateString()}</p>
-            </div>
-          ))
-      ) : (
-        <p className="no-data">No upcoming orders</p>
-      )
-    ) : profile.orders?.filter(order => order.status === "Done").length > 0 ? (
-      profile.orders
-        .filter(order => order.status === "Done")
-        .map((order) => (
-          <div key={order.restaurantName}>
-            <h3>{order.restaurantName}</h3>
-            <p>Restaurant City: {order.restaurantCity}</p>
-            <p>Restaurant Description: {order.restaurantDescription}</p>
-            <p>Restaurant Phone: {order.restaurantPhone}</p>
-            <p>Guests: {order.guests}</p>
-            <p>Order Date: {new Date(order.orderDate).toLocaleDateString()}</p>
-          </div>
-        ))
-    ) : (
-      <p className="no-data">No past orders</p>
-    )}
-  </div>
-</div>
+       <div className="orders-container">
+         {activeTab === "upcoming" ? (
+           profile.orders?.filter(order => order.status === "Planing").length > 0 ? (
+             profile.orders
+               .filter(order => order.status === "Planing")
+               .map((order) => (
+                 <div key={order.restaurantName} className="order-card">
+                   <div className="order-header">
+                     <h3>{order.restaurantName}</h3>
+                     <span className="status-tag status-planing">Upcoming</span>
+                   </div>
+                   <div className="order-info">
+                     <div className="order-detail">
+                       <span className="detail-label">City</span>
+                       <span className="detail-value">{order.restaurantCity}</span>
+                     </div>
+                     <div className="order-detail">
+                       <span className="detail-label">Description</span>
+                       <span className="detail-value">{order.restaurantDescription}</span>
+                     </div>
+                     <div className="order-detail">
+                       <span className="detail-label">Phone</span>
+                       <span className="detail-value">{order.restaurantPhone}</span>
+                     </div>
+                     <div className="order-detail">
+                       <span className="detail-label">Guests</span>
+                       <span className="detail-value">{order.guests}</span>
+                     </div>
+                     <div className="order-detail">
+                       <span className="detail-label">Order Date</span>
+                       <span className="detail-value">
+                         {new Date(order.orderDate).toLocaleDateString()}
+                       </span>
+                     </div>
+                   </div>
+                 </div>
+               ))
+           ) : (
+             <p className="no-data">No upcoming orders</p>
+           )
+         ) : profile.orders?.filter(order => order.status === "Done").length > 0 ? (
+           profile.orders
+             .filter(order => order.status === "Done")
+             .map((order) => (
+               <div key={order.restaurantName} className="order-card">
+                 <div className="order-header">
+                   <h3>{order.restaurantName}</h3>
+                   <span className="status-tag status-done">Completed</span>
+                 </div>
+                 <div className="order-info">
+                   <div className="order-detail">
+                     <span className="detail-label">City</span>
+                     <span className="detail-value">{order.restaurantCity}</span>
+                   </div>
+                   <div className="order-detail">
+                     <span className="detail-label">Description</span>
+                     <span className="detail-value">{order.restaurantDescription}</span>
+                   </div>
+                   <div className="order-detail">
+                     <span className="detail-label">Phone</span>
+                     <span className="detail-value">{order.restaurantPhone}</span>
+                   </div>
+                   <div className="order-detail">
+                     <span className="detail-label">Guests</span>
+                     <span className="detail-value">{order.guests}</span>
+                   </div>
+                   <div className="order-detail">
+                     <span className="detail-label">Order Date</span>
+                     <span className="detail-value">
+                       {new Date(order.orderDate).toLocaleDateString()}
+                     </span>
+                   </div>
+                 </div>
+               </div>
+             ))
+         ) : (
+           <p className="no-data">No past orders</p>
+         )}
+       </div>
+     </div>
 
 
       {/* Change Password */}
