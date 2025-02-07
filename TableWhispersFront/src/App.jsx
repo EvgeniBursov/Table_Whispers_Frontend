@@ -4,6 +4,7 @@ import Navbar from './components/Navbar/Navbar'
 import LoginPopUp from './components/LoginPopUp/loginPopUp'
 import ClientProfile from './pages/ClientProfile/profile'
 import RestaurantAuth from './pages/RestaurantAuth/RestaurantAuth';
+import HomePage from './pages/HomePage/HomePage'
 
 const App = () => {
   const [showLogin, setShowLogin] = useState(false)
@@ -16,6 +17,7 @@ const App = () => {
         <Routes>
           <Route path="/profile" element={<ClientProfile />} />
           <Route path="/restaurant/login" element={<RestaurantAuth />} />
+          <Route path="/HomePage" element={<HomePage />} />
         </Routes>
       </div>
     </BrowserRouter>
