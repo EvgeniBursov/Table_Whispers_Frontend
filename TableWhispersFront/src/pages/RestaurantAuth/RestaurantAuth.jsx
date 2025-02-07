@@ -2,25 +2,26 @@ import React, { useState } from 'react';
 import './RestaurantAuth.css';
 
 const RestaurantAuth = () => {
-  const [currState, setCurrState] = useState('Login');
+  const [currState, setCurrState] = useState("Sign Up");
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    phone_number: '',
     first_name: '',
     last_name: '',
     age: '',
+    email: '',
+    password: '',
     confirm_password: '',
+    phone_number: '',
     city: '',
     restaurant_name: '',
+    username: '',
+    user_type: 'Restaurant',
     acceptedTerms: false
   });
 
-  // TOTP Verification States
-  const [verificationStage, setVerificationStage] = useState('credentials');
-  const [totpCode, setTotpCode] = useState('');
-  const [verificationEmail, setVerificationEmail] = useState('');
+  // מצבים לאימות TOTP
+  const [showTOTP, setShowTOTP] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [tempUserData, setTempUserData] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -30,119 +31,101 @@ const RestaurantAuth = () => {
     }));
   };
 
-  const handleSubmitCredentials = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate form data (add your specific validations)
     if (currState === "Sign Up" && formData.password !== formData.confirm_password) {
       alert('Passwords do not match.');
       return;
     }
 
     try {
-      const endpoint = currState === "Sign Up" 
-        ? 'http://localhost:7000/resRegister'  // Modified endpoint for initial registration request
-        : 'http://localhost:7000/resLogin';    // Modified endpoint for login request
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
+      const response = await fetch(
+        `http://localhost:7000/${currState === "Sign Up" ? 'resRegister' : 'resLogin'}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+      
       const data = await response.json();
-
+      
       if (!response.ok) {
-        alert(data.error || 'An error occurred');
+        alert(data.error);
         return;
       }
+      setTempUserData(data);
+      setShowTOTP(true);
 
-      // Save the email for verification
-      setVerificationEmail(formData.email);
-      
-      // Move to verification stage
-      setVerificationStage('verify');
     } catch (error) {
-      alert('Could not connect to the server: ' + error.message);
+      alert('Could not connect to the server.');
     }
   };
 
   const handleVerifyTOTP = async (e) => {
     e.preventDefault();
-
+    
     try {
-      const endpoint = currState === "Sign Up" 
-        ? 'http://localhost:5000/verifyTotpCode'  // Verify registration TOTP
-        : 'http://localhost:5000/verifyTotpCode';    // Verify login TOTP
-
-      const response = await fetch(endpoint, {
+      const response = await fetch('http://localhost:5000/verifyTotpCode', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: verificationEmail,
-          totp_code: totpCode
+          email: formData.email,
+          totp_code: verificationCode,
+          user_type: 'Restaurant'
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.error || 'Verification failed');
+        alert(data.error);
         return;
       }
 
-      // Successful verification
-      if (currState === "Sign Up") {
-        alert('Registration successful!');
-        setCurrState('Login');
-      } else {
-        // Store token and redirect
-        localStorage.setItem('restaurantToken', data.token);
-        window.location.href = '/restaurant/dashboard';
+      // אם האימות הצליח
+      localStorage.setItem("restaurantToken", data.token);
+      try {
+        const base64Url = data.token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(window.atob(base64));
+        localStorage.setItem("restaurantEmail", payload.email);
+      } catch (error) {
+        console.error("[AUTH] Error extracting email from token:", error);
       }
+
+      // ניווט לדף הרצוי
+      window.location.href = '/restaurant/dashboard';
+      
     } catch (error) {
-      alert('Could not verify TOTP: ' + error.message);
+      alert('Failed to verify code.');
     }
   };
 
   const renderContent = () => {
-    // Verification stage
-    if (verificationStage === 'verify') {
+    if (showTOTP) {
       return (
-        <div className="verification-container">
+        <div className="totp-verification">
           <h3>Enter Verification Code</h3>
-          <p>A 6-digit code has been sent to {verificationEmail}</p>
-          <form onSubmit={handleVerifyTOTP}>
-            <input
-              type="text"
-              placeholder="Enter 6-digit code"
-              value={totpCode}
-              onChange={(e) => setTotpCode(e.target.value)}
-              maxLength="6"
-              required
-            />
-            <button type="submit">Verify</button>
-          </form>
-          <p 
-            className="resend-code"
-            onClick={() => {
-              // Implement resend logic if needed
-              alert('Resend functionality to be implemented');
-            }}
-          >
-            Didn't receive code? Resend
-          </p>
+          <p>A verification code has been sent to your email</p>
+          <input
+            type="text"
+            placeholder="Enter verification code"
+            value={verificationCode}
+            onChange={(e) => setVerificationCode(e.target.value)}
+          />
+          <button onClick={handleVerifyTOTP}>Verify Code</button>
         </div>
       );
     }
 
-    // Credentials stage
     return (
-      <form onSubmit={handleSubmitCredentials}>
+      <form onSubmit={handleSubmit}>
         {currState === "Sign Up" && (
           <>
             <input
@@ -171,17 +154,17 @@ const RestaurantAuth = () => {
             />
             <input
               type="text"
-              name="restaurant_name"
-              placeholder="Restaurant Name"
-              value={formData.restaurant_name}
+              name="city"
+              placeholder="City"
+              value={formData.city}
               onChange={handleChange}
               required
             />
             <input
               type="text"
-              name="city"
-              placeholder="City"
-              value={formData.city}
+              name="restaurant_name"
+              placeholder="Restaurant Name"
+              value={formData.restaurant_name}
               onChange={handleChange}
               required
             />
@@ -205,14 +188,6 @@ const RestaurantAuth = () => {
           required
         />
         <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
-        <input
           type="tel"
           name="phone_number"
           placeholder="Phone Number"
@@ -220,7 +195,14 @@ const RestaurantAuth = () => {
           onChange={handleChange}
           required
         />
-
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+          required
+        />
         {currState === "Sign Up" && (
           <>
             <input
@@ -243,51 +225,34 @@ const RestaurantAuth = () => {
             </label>
           </>
         )}
-
         <button type="submit">
-          {currState === "Sign Up" ? "Request Registration" : "Request Login"}
+          {currState === "Sign Up" ? "Create Account" : "Login"}
         </button>
       </form>
     );
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2>{currState}</h2>
+    <div className="login-popup">
+      <div className="login-popup-container">
+        <div className="login-popup-title">
+          <h2>{showTOTP ? 'Verify Account' : currState}</h2>
+        </div>
         
         {renderContent()}
 
-        <div className="auth-footer">
-          {verificationStage === 'credentials' && (
-            <p className="auth-toggle">
-              {currState === "Login" ? (
-                <>
-                  Don't have an account?{' '}
-                  <span onClick={() => {
-                    setCurrState("Sign Up");
-                    setVerificationStage('credentials');
-                  }}>
-                    Sign Up
-                  </span>
-                </>
-              ) : (
-                <>
-                  Already have an account?{' '}
-                  <span onClick={() => {
-                    setCurrState("Login");
-                    setVerificationStage('credentials');
-                  }}>
-                    Login
-                  </span>
-                </>
-              )}
+        {!showTOTP && (
+          <div className="login-popup-footer">
+            <p>
+              {currState === "Login" ? "Don't have an account? " : "Already have an account? "}
+              <span onClick={() => setCurrState(currState === "Login" ? "Sign Up" : "Login")}>
+                {currState === "Login" ? "Sign Up" : "Login"}
+              </span>
             </p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
-
 export default RestaurantAuth;

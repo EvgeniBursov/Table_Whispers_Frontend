@@ -13,7 +13,7 @@ const ClientProfile = () => {
   const [pastOrders, setPastOrders] = useState([]); // Store past orders
   const [upcomingOrders, setUpcomingOrders] = useState([]); // Store upcoming orders
 
-  const email = "bursov19951@gmail.com"; // Email to pass as query parameter
+  const email = localStorage.getItem("userEmail");
 
   useEffect(() => {
     const fetchProfile = async () => {

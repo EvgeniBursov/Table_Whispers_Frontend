@@ -12,6 +12,7 @@ const LoginPopUp = ({ setShowLogin }) => {
     password: '',
     confirm_password: '',
     phone_number: '',
+    user_type: "",
     acceptedTerms: false
   });
 
@@ -63,6 +64,17 @@ const LoginPopUp = ({ setShowLogin }) => {
 
       alert(currState === "Sign Up" ? 'Registration successful!' : 'Login successful!');
       localStorage.setItem("token", data.token);
+      try {
+        const base64Url = data.token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(window.atob(base64));
+        console.log("[AUTH] User logged in:", payload.email);
+        localStorage.setItem("userEmail", payload.email);
+      } catch (error) {
+        console.error("[AUTH] Error extracting email from token:", error);
+      }
+
+
       setShowLogin(false);
     } catch (error) {
       alert('Could not connect to the server.');
@@ -81,7 +93,7 @@ const LoginPopUp = ({ setShowLogin }) => {
             return;
           }
           url = 'http://localhost:5000/sendTotpCode';
-          payload = { email: resetEmail };
+          payload = { email: resetEmail ,user_type:'Client'};
           break;
 
         case 'code':
@@ -93,6 +105,7 @@ const LoginPopUp = ({ setShowLogin }) => {
           url = 'http://localhost:5000/verifyTotpCode';
           payload = { 
             email: verifiedEmail,
+            user_type:'Client',
             totp_code: verificationCode 
           };
           break;
