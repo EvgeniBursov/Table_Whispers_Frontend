@@ -96,20 +96,19 @@
   background: #0056b3;
 }
 
-
 /* Tabs Styles */
 .tabs {
   display: flex;
   gap: 15px;
   margin-bottom: 30px;
 }
+
 .password-form {
   display: flex;
-  gap: 15px; /* This will add some space between the elements */
-  align-items: center; /* Align vertically */
-  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
 }
-
 
 /* Input Fields */
 .password-form input {
@@ -118,7 +117,7 @@
   border-radius: 5px;
   font-size: 16px;
   color: #333;
-  width: 200px; /* Fix the width of inputs */
+  width: 200px;
   transition: all 0.3s ease;
 }
 
@@ -137,13 +136,12 @@
   font-size: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
-  white-space: nowrap; /* Prevent text from wrapping */
+  white-space: nowrap;
 }
 
 .update-button:hover {
   background: #0056b3;
 }
-
 
 /* Delete Profile Button */
 .delete-button {
@@ -154,7 +152,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 16px;
-  margin-left: 0;  /* מחק מרווח אם יש */
+  margin-left: 0;
 }
 
 .delete-button:hover {
@@ -242,7 +240,7 @@ profile-card-dropdown h3 {
 .allergy-select {
   padding: 10px;
   width: 100%;
-  max-width: 300px; /* Set maximum width for the dropdown */
+  max-width: 300px;
   border: 1px solid #ddd;
   border-radius: 5px;
   font-size: 16px;
@@ -306,96 +304,102 @@ profile-card-dropdown h3 {
 
 .orders-container {
   margin-top: 20px;
- }
- 
- .order-card {
+}
+
+.order-card {
   background: white;
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 15px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   transition: all 0.3s ease;
- }
- 
- .order-card:hover {
+}
+
+.order-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
- }
- 
- .order-card h3 {
+}
+
+.order-card h3 {
   font-size: 20px;
   color: #1a1a1a;
   margin-bottom: 15px;
   font-weight: 600;
- }
- 
- .order-info {
+}
+
+.order-info {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 15px;
- }
- 
- .order-detail {
+}
+
+.order-detail {
   display: flex;
   flex-direction: column;
   gap: 5px;
- }
- 
- .detail-label {
+}
+
+.detail-label {
   font-size: 14px;
   color: #666;
- }
- 
- .detail-value {
+}
+
+.detail-value {
   font-size: 16px;
   color: #333;
   font-weight: 500;
- }
- 
- /* Status Tags */
- .status-tag {
+}
+
+/* Status Tags */
+.status-tag {
   display: inline-block;
   padding: 5px 12px;
   border-radius: 15px;
   font-size: 14px;
   font-weight: 500;
- }
- 
- .status-planing {
+}
+
+.status-planing {
   background: #e3f2fd;
   color: #1976d2;
- }
- 
- .status-done {
+}
+
+.status-done {
   background: #e8f5e9;
   color: #2e7d32;
- }
-
- 
-
+}
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .profile-header {
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
 
   .profile-image {
-      margin-bottom: 20px;
+    margin-bottom: 20px;
   }
 
   .details-grid {
-      grid-template-columns: 1fr;
+    grid-template-columns: 1fr;
   }
 
   .tabs {
-      flex-direction: column;
+    flex-direction: column;
   }
 
   .tab-button {
-      width: 100%;
-      text-align: center;
+    width: 100%;
+    text-align: center;
+  }
+
+  .password-form input {
+    width: 100%;
+  }
+
+  .update-button, .delete-button {
+    width: 100%;
+    padding: 12px;
   }
 }

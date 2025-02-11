@@ -1,26 +1,306 @@
-.login-popup{
+/* Custom Properties */
+:root {
+    --primary-color: #4f46e5;
+    --primary-hover: #4338ca;
+    --surface-color: #ffffff;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --error-color: #ef4444;
+    --success-color: #10b981;
+  }
+  
+  /* Login Popup Overlay */
+  .login-popup {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+    opacity: 0;
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+  
+  /* Container */
+  .login-popup-container {
+    background: var(--surface-color);
+    width: min(90vw, 420px);
+    padding: 2.5rem;
+    border-radius: 24px;
+    box-shadow: 
+      0 10px 30px rgba(0, 0, 0, 0.1),
+      0 1px 8px rgba(0, 0, 0, 0.05);
+    transform: translateY(20px);
+    opacity: 0;
+    animation: slideUp 0.5s ease-out 0.2s forwards;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .login-popup-container::before {
+    content: '';
     position: absolute;
-    z-index: 1;
-    width: 100%;
-    height: 100%;
-    background-color: #00000090;
-    display: grid;
-}
-.login-popup-container{
-    place-self: center;
-    width: max(23vw,330px);
-    color: #808080;
-    background-color: white;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(to right, var(--primary-color), #8b5cf6);
+  }
+  
+  /* Header */
+  .login-popup-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+  }
+  
+  .login-popup-title h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    background: linear-gradient(to right, var(--primary-color), #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .login-popup-title img {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+    padding: 4px;
+    border-radius: 50%;
+  }
+  
+  .login-popup-title img:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.05);
+    transform: rotate(90deg);
+  }
+  
+  /* Form Elements */
+  .login-popup form {
     display: flex;
     flex-direction: column;
-    gap: 25px;
-    padding: 25px 30px;
-    border-radius: 8px;
-    font-size: 14px;
-    animation: fadeIn 0.5s;
-}
-.login-popup-title img {
-    width: 20px;  /* Adjust width */
-    height: 20px; /* Adjust height */
-    cursor: pointer; /* Makes the icon clickable */
+    gap: 1.25rem;
+  }
+  
+  .login-popup input:not([type="checkbox"]) {
+    width: 100%;
+    padding: 0.875rem 1.25rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 0.9375rem;
+    transition: all 0.3s ease;
+    background: #f9fafb;
+  }
+  
+  .login-popup input:hover:not([type="checkbox"]) {
+    border-color: #d1d5db;
+    background: #f3f4f6;
+  }
+  
+  .login-popup input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: var(--surface-color);
+    box-shadow: 
+      0 0 0 4px rgba(79, 70, 229, 0.1),
+      0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+  
+  .login-popup input::placeholder {
+    color: #9ca3af;
+    font-size: 0.9375rem;
+  }
+  
+  /* Checkbox */
+  .login-popup label {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .login-popup input[type="checkbox"] {
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 4px;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+  }
+  
+  /* Button */
+  .login-popup button {
+    background: linear-gradient(to right, var(--primary-color), #4338ca);
+    color: white;
+    padding: 0.875rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .login-popup button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+  }
+  
+  .login-popup button:active {
+    transform: translateY(1px);
+  }
+  
+  /* Footer */
+  .login-popup-footer {
+    margin-top: 2rem;
+    text-align: center;
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+  }
+  
+  .login-popup-footer p {
+    margin: 0.75rem 0;
+  }
+  
+  .login-popup-footer span {
+    color: var(--primary-color);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  
+  .login-popup-footer span::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+  }
+  
+  .login-popup-footer span:hover {
+    color: var(--primary-hover);
+  }
+  
+  .login-popup-footer span:hover::after {
+    transform: scaleX(1);
+  }
+  
+  /* Verified Email */
+  .verified-email {
+    background: #f8fafc;
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.25rem;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .verified-email::before {
+    content: '✓';
+    color: var(--success-color);
+    font-weight: bold;
+  }
+  
+  /* Error State */
+  .login-popup input.error {
+    border-color: var(--error-color);
+    background: #fef2f2;
+  }
+  
+  .login-popup .error-message {
+    color: var(--error-color);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  
+  /* Animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Loading State */
+  .login-popup button.loading {
+    position: relative;
+    color: transparent;
+  }
+  
+  .login-popup button.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 480px) {
+    .login-popup-container {
+      padding: 2rem 1.5rem;
+    }
+    
+    .login-popup-title h2 {
+      font-size: 1.5rem;
+    }
+    
+    .login-popup input:not([type="checkbox"]) {
+      padding: 0.75rem 1rem;
+    }
+    
+    .login-popup button {
+      padding: 0.75rem 1.25rem;
+    }
   }
