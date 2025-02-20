@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'
 import './HomePage.css';
 
 const HomePage = () => {
+ const navigate = useNavigate();
  const [selectedPeople, setSelectedPeople] = useState(2);
  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
  const [selectedTime, setSelectedTime] = useState('19:00');
@@ -9,6 +11,10 @@ const HomePage = () => {
  const [recommendedRestaurants, setRecommendedRestaurants] = useState([]);
  const [searchQuery, setSearchQuery] = useState('');
  const [filteredRestaurants, setFilteredRestaurants] = useState([]);
+
+ const handleRestaurantClick = (restaurantId) => {
+  navigate(`/restaurant/${restaurantId}`);  // שיניתי את הנתיב
+};
 
  useEffect(() => {
    const fetchRecommendedRestaurants = async () => {
@@ -138,7 +144,10 @@ const HomePage = () => {
        ) : (
          <div className="restaurants-grid">
            {filteredRestaurants.map((restaurant) => (
-             <div key={restaurant._id} className="restaurant-card">
+             <div key={restaurant._id} 
+             className="restaurant-card"
+             onClick={() => handleRestaurantClick(restaurant._id)}
+             >
                <img 
                  src={`http://localhost:7000/${restaurant.mainImage}` || 'https://via.placeholder.com/150'} 
                  alt={restaurant.name} 

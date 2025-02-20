@@ -5,6 +5,7 @@ import LoginPopUp from './components/LoginPopUp/loginPopUp'
 import ClientProfile from './pages/ClientProfile/profile'
 import RestaurantAuth from './pages/RestaurantAuth/RestaurantAuth';
 import HomePage from './pages/HomePage/HomePage'
+import RestaurantPage from './pages/RestaurantPage/RestaurantPage'
 
 const App = () => {
   const [showLogin, setShowLogin] = useState(false)
@@ -18,6 +19,7 @@ const App = () => {
           <Route path="/profile" element={<ClientProfile />} />
           <Route path="/restaurant/login" element={<RestaurantAuth />} />
           <Route path="/HomePage" element={<HomePage />} />
+          <Route path="/restaurant/:id" element={<RestaurantPage />} /> 
         </Routes>
       </div>
     </BrowserRouter>
