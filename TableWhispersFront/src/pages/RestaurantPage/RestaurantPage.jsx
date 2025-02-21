@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import TableReservation from '../../components/TableReservation/TableReservation';
+import RestaurantReviews from '../../components/RestaurantReviews/RestaurantReviews';
 import { useParams } from 'react-router-dom';
 import './RestaurantPage.css';
 
@@ -9,6 +11,21 @@ const RestaurantPage = () => {
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
     const [selectedTime, setSelectedTime] = useState('19:00');
     const [activeTab, setActiveTab] = useState('overview');
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [currentUser, setCurrentUser] = useState(null);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        const userEmail = localStorage.getItem('userEmail');
+        
+        if (token) {
+          setIsLoggedIn(true);
+          setCurrentUser({
+            id: localStorage.getItem('userId'), // אם יש לך
+            email: userEmail
+          });
+        }
+      }, []);
     
     useEffect(() => {
       const fetchRestaurantData = async () => {
@@ -38,66 +55,29 @@ const RestaurantPage = () => {
                 />
 
                 <div className="header-content">
-                    <h1>{restaurant.res_name}</h1>
-                    <div className="restaurant-info">
-                        {/* דירוג */}
-                        <div className="rating">
-                            {[...Array(5)].map((_, index) => (
-                                <span key={index} className={index < Math.floor(restaurant.rating) ? 'star-filled' : 'star-empty'}>★</span>
-                            ))}
-                            <span className="rating-number">{restaurant.rating}</span>
-                        </div>
+                        <h1>{restaurant.res_name}</h1>
+                        <div className="restaurant-info">
+                            <div className="rating">
+                                {[...Array(5)].map((_, index) => (
+                                    <span key={index} className={index < Math.floor(restaurant.rating) ? 'star-filled' : 'star-empty'}>★</span>
+                                ))}
+                                <span className="rating-number">{restaurant.rating}</span>
+                            </div>
 
-                        {/* פרטי קשר ומיקום */}
-                        <div className="contact-info">
-                            <p className="phone">{restaurant.phone_number}</p>
-                            <p className="address">{restaurant.full_address}</p>
-                            <p className="city">{restaurant.city}</p>
+                            <div className="contact-info">
+                                <p className="phone">{restaurant.phone_number}</p>
+                                <p className="address">{restaurant.full_address}</p>
+                                <p className="city">{restaurant.city}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Reservation Card */}
-        <div className="reservation-card">
-          <h3>Make a reservation</h3>
-          <div className="reservation-inputs">
-            <select 
-              value={selectedPeople}
-              onChange={(e) => setSelectedPeople(e.target.value)}
-            >
-              <option value="1">1 person</option>
-              <option value="2">2 people</option>
-              <option value="3">3 people</option>
-              <option value="4">4 people</option>
-              <option value="5">5+ people</option>
-            </select>
-            
-            <input 
-              type="date"
-              value={selectedDate}
-              min={new Date().toISOString().split("T")[0]}
-              onChange={(e) => setSelectedDate(e.target.value)}
-            />
-            
-            <select 
-              value={selectedTime}
-              onChange={(e) => setSelectedTime(e.target.value)}
-            >
-              {restaurant.availableTimes?.map(time => (
-                <option key={time} value={time}>{time}</option>
-              ))}
-            </select>
-          </div>
-
-          <button className="reserve-button">Complete reservation</button>
-          
-          <div className="booked-info">
-            Booked {restaurant.todayBookings} times today
-          </div>
-        </div>
-      
-            </div>
-
+               {/* הוספת קומפוננטת ההזמנות */}
+                <TableReservation 
+                    restaurantId={id}
+                    restaurantName={restaurant.res_name}
+                />
             {/* Navigation Tabs */}
             <div className="restaurant-nav">
                 <button className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}>Overview</button>
@@ -173,41 +153,14 @@ const RestaurantPage = () => {
             )}
         </div>
     )}
-        {activeTab === 'reviews' && (
-        <div className="reviews-section">
-            <h2>Customer Reviews</h2>
-            {restaurant.reviews && restaurant.reviews.length > 0 ? (
-                <div className="reviews-container">
-                    {restaurant.reviews.map((review) => (
-                        <div key={review._id} className="review-card">
-                            <div className="review-header">
-                                <div className="review-user-info">
-                                    <h4>{review.user ? `${review.user.first_name} ${review.user.last_name}` : 'Anonymous User'}</h4>
-                                    <div className="review-rating">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <span 
-                                                key={star} 
-                                                className={`star ${star <= review.rating ? 'star-filled' : 'star-empty'}`}
-                                            >
-                                                ★
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                                <span className="review-date">
-                                    {new Date(review.created_at).toLocaleDateString()}
-                                </span>
-                            </div>
-                            <p className="review-comment">{review.comment}</p>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="no-reviews">
-                    No reviews yet. Be the first to review!
-                </div>
-            )}
-        </div>
+      {activeTab === 'reviews' && (
+    <RestaurantReviews 
+        reviews={restaurant.reviews}
+        restaurantId={id}
+        isLoggedIn={isLoggedIn}
+        currentUser={currentUser}
+    />
+
     )}
 
             {activeTab === 'gallery' && (
