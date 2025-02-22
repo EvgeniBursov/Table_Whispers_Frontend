@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - main
+      - Restaurant_Page
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
       - main
+      - Restaurant_Page
 
 jobs:
   build_and_deploy_job:
