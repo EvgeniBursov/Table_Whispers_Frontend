@@ -29,15 +29,16 @@ const RestaurantReviews = ({ reviews: initialReviews, restaurantId, isLoggedIn, 
     }
 
     try {
-      const response = await fetch(`http://localhost:7000/restaurant/${restaurantId}/reviews`, {
+      const response = await fetch(`http://localhost:7000/add_New_Reviews/restaurant/${restaurantId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          restaurant_Id: restaurantId,
           rating: newReview.rating,
-          comment: newReview.comment,
-          userId: currentUser.id
+          review: newReview.comment,
+          user_email: localStorage.getItem('userEmail'), //userEmail
         }),
       });
 
