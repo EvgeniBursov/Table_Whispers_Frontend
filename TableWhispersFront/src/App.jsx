@@ -1,17 +1,28 @@
 import React, { useState } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar/Navbar'
 import LoginPopUp from './components/LoginPopUp/loginPopUp'
+import ClientProfile from './pages/ClientProfile/profile'
+import RestaurantAuth from './pages/RestaurantAuth/RestaurantAuth';
+import HomePage from './pages/HomePage/HomePage'
+import RestaurantPage from './pages/RestaurantPage/RestaurantPage'
 
 const App = () => {
   const [showLogin, setShowLogin] = useState(false)
   
   return (
-    <>
-      {showLogin ? <LoginPopUp /> : null}
+    <BrowserRouter>
+      {showLogin ? <LoginPopUp setShowLogin={setShowLogin} /> : null}
       <div className='app'>
         <Navbar setShowLogin={setShowLogin} />
+        <Routes>
+          <Route path="/profile" element={<ClientProfile />} />
+          <Route path="/restaurant/login" element={<RestaurantAuth />} />
+          <Route path="/HomePage" element={<HomePage />} />
+          <Route path="/restaurant/:id" element={<RestaurantPage />} /> 
+        </Routes>
       </div>
-    </>
+    </BrowserRouter>
   )
 }
 

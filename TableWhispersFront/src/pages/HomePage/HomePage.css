@@ -1,0 +1,302 @@
+/* HomePage.css */
+.homepage {
+  padding: clamp(20px, 5vw, 40px);
+  max-width: 1300px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #ffffff, #f8fafc);
+}
+
+/* Hero Search Section */
+.search-section {
+  background: white;
+  padding: clamp(24px, 5vw, 40px);
+  border-radius: 20px;
+  margin-bottom: 40px;
+  box-shadow: 
+    0 4px 6px -1px rgba(0,0,0,0.05),
+    0 10px 15px -3px rgba(0,0,0,0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.search-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(to right, #e31837, #ff4d6d);
+}
+
+.search-container {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Search Inputs */
+.search-container select,
+.search-container input {
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
+  min-width: 140px;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.search-container select:hover,
+.search-container input:hover {
+  border-color: #cbd5e1;
+  background: white;
+}
+
+.search-container select:focus,
+.search-container input:focus {
+  outline: none;
+  border-color: #e31837;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(227, 24, 55, 0.1);
+}
+
+/* Search Button */
+.search-container button {
+  padding: 14px 28px;
+  background: #e31837;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.search-container button:hover {
+  background: #cc1530;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(227, 24, 55, 0.2);
+}
+
+.search-container button:active {
+  transform: translateY(1px);
+}
+
+/* Restaurants Grid */
+.restaurants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  margin-top: 32px;
+}
+
+/* Restaurant Card */
+.restaurant-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 1px 3px rgba(0,0,0,0.05),
+    0 1px 2px rgba(0,0,0,0.1);
+  position: relative;
+}
+
+.restaurant-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    0 10px 20px rgba(0,0,0,0.05),
+    0 4px 6px rgba(0,0,0,0.05);
+}
+
+/* Restaurant Image */
+.restaurant-image {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.restaurant-card:hover .restaurant-image {
+  transform: scale(1.05);
+}
+
+/* Restaurant Info */
+.restaurant-info {
+  padding: 20px;
+}
+
+.restaurant-info h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.restaurant-info p {
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+/* Rating Stars */
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 12px 0;
+}
+
+.star-filled,
+.star-half,
+.star-empty {
+  font-size: 18px;
+}
+
+.star-filled {
+  color: #fbbf24;
+}
+
+.star-half {
+  position: relative;
+  color: #fbbf24;
+}
+
+.star-empty {
+  color: #e2e8f0;
+}
+
+.review-count {
+  font-size: 14px;
+  color: #64748b;
+  margin-left: 8px;
+}
+
+/* Available Times */
+.available-times {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.time-slot {
+  padding: 8px 16px;
+  background: #f8fafc;
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  transition: all 0.2s ease;
+}
+
+.time-slot:hover {
+  background: #e31837;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.time-slot:active {
+  transform: translateY(1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .search-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-container select,
+  .search-container input,
+  .search-container button {
+    width: 100%;
+  }
+
+  .restaurants-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .restaurant-card {
+    max-width: 100%;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .homepage {
+    background: linear-gradient(to bottom, #0f172a, #1e293b);
+  }
+
+  .search-section,
+  .restaurant-card {
+    background: #1e293b;
+  }
+
+  .restaurant-info h3 {
+    color: #f1f5f9;
+  }
+
+  .restaurant-info p,
+  .review-count {
+    color: #94a3b8;
+  }
+
+  .search-container select,
+  .search-container input {
+    background: #334155;
+    border-color: #475569;
+    color: #f1f5f9;
+  }
+
+  .time-slot {
+    background: #334155;
+    color: #f1f5f9;
+  }
+
+  .star-empty {
+    color: #475569;
+  }
+}
+
+/* Loading States */
+.restaurant-card.loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.restaurant-card.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
