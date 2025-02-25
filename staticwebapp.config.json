@@ -1,10 +1,11 @@
 {
   "navigationFallback": {
-    "rewrite": " TableWhispersFront/index.html"
+    "rewrite": "/index.html"
   },
   "mimeTypes": {
     ".js": "text/javascript",
     ".jsx": "text/javascript",
+    ".json": "application/json",
     ".css": "text/css",
     ".html": "text/html"
   }
