@@ -1,0 +1,126 @@
+/* components/TableReservation/TableReservation.css */
+
+.table-reservation {
+    width: 100%;
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+  
+  .booking-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    align-items: end;
+  }
+  
+  .form-inputs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+  
+  .input-group {
+    flex: 1;
+  }
+  
+  .input-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 500;
+  }
+  
+  .input-group select,
+  .input-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+  }
+  
+  .find-table-btn {
+    width: 100%;
+    padding: 15px;
+    background: #e31837;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+    text-transform: uppercase;
+  }
+  
+  .find-table-btn:hover {
+    background: #c41530;
+  }
+  
+  /* Time slots styling */
+  .available-times {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+  }
+  
+  .available-times h3 {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+  
+  .date-info {
+    color: #666;
+    margin-bottom: 20px;
+  }
+  
+  .seating-areas {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .area h4 {
+    margin-bottom: 15px;
+    font-size: 18px;
+    color: #333;
+  }
+  
+  .time-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+  
+  .time-slot {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .time-slot:not(.unavailable):hover {
+    border-color: #e31837;
+  }
+  
+  .time-slot .time {
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  
+  .time-slot .status {
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .time-slot.unavailable {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
