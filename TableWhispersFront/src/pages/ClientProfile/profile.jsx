@@ -34,7 +34,7 @@ const ClientProfile = () => {
         console.log(data);
         setProfile(data);
         const pastOrders = data.orders.filter(order => order.status === "Done");
-        const upcomingOrders = data.orders.filter(order => order.status === "Planing");
+        const upcomingOrders = data.orders.filter(order => order.status === "Planning");
         setPastOrders(pastOrders);
         setUpcomingOrders(upcomingOrders);
       } catch (error) {
@@ -244,9 +244,9 @@ const ClientProfile = () => {
 
        <div className="orders-container">
          {activeTab === "upcoming" ? (
-           profile.orders?.filter(order => order.status === "Planing").length > 0 ? (
+           profile.orders?.filter(order => order.status === "Planning").length > 0 ? (
              profile.orders
-               .filter(order => order.status === "Planing")
+               .filter(order => order.status === "Planning")
                .map((order) => (
                  <div key={order.restaurantName} className="order-card">
                    <div className="order-header">
