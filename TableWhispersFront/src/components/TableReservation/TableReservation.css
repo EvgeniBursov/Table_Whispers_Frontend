@@ -200,3 +200,87 @@
     text-align: center;
   }
 }
+
+/* New styles for table availability */
+
+/* No times message */
+.no-times-message {
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #ddd;
+  color: #6c757d;
+  text-align: center;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+/* Availability warning */
+.low-availability-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 10px 12px;
+  border-radius: 4px;
+  margin: 10px 0;
+  font-size: 14px;
+  border-left: 4px solid #ffc107;
+}
+
+/* Time select styles */
+.time-select {
+  width: 100%;
+}
+
+/* Availability classes for time options */
+.high-availability {
+  color: #28a745;
+}
+
+.medium-availability {
+  color: #fd7e14;
+}
+
+.low-availability {
+  color: #dc3545;
+}
+
+/* Style the options with colored dots (will only work in some browsers) */
+.time-option {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Availability indicator before the text */
+option.time-option::before {
+  content: "•";
+  margin-right: 5px;
+}
+
+option.high-availability::before {
+  color: #28a745;
+}
+
+option.medium-availability::before {
+  color: #fd7e14;
+}
+
+option.low-availability::before {
+  color: #dc3545;
+}
+
+/* Email field styling */
+.email-field {
+  position: relative;
+}
+
+.email-note {
+  position: absolute;
+  right: 10px;
+  top: 42px; /* Positioned inside the input */
+  font-size: 12px;
+  color: #6c757d;
+  background: #f8f9fa;
+  padding: 2px 8px;
+  border-radius: 4px;
+}

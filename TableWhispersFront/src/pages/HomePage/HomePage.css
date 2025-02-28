@@ -1,4 +1,4 @@
-/* HomePage.css */
+/* HomePage.css - enhanced with new time slot styles */
 .homepage {
   padding: clamp(20px, 5vw, 40px);
   max-width: 1300px;
@@ -88,6 +88,18 @@
   transform: translateY(1px);
 }
 
+.find-button {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.find-button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 /* Restaurants Grid */
 .restaurants-grid {
   display: grid;
@@ -106,6 +118,7 @@
     0 1px 3px rgba(0,0,0,0.05),
     0 1px 2px rgba(0,0,0,0.1);
   position: relative;
+  cursor: pointer;
 }
 
 .restaurant-card:hover {
@@ -179,36 +192,130 @@
   margin-left: 8px;
 }
 
+/* Search Message */
+.search-message {
+  background-color: #f8fafc;
+  padding: 15px;
+  border-radius: 12px;
+  text-align: center;
+  color: #64748b;
+  margin-top: 16px;
+  border: 1px dashed #cbd5e1;
+}
+
+.no-results {
+  text-align: center;
+  color: #64748b;
+  padding: 30px;
+  background: #f8fafc;
+  border-radius: 12px;
+  margin-top: 16px;
+}
+
 /* Available Times */
 .available-times {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #f1f5f9;
 }
 
+.available-times h4 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.time-slots {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
 .time-slot {
-  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 15px;
   background: #f8fafc;
-  border: none;
-  border-radius: 99px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  color: #475569;
   transition: all 0.2s ease;
+  min-width: 105px;
 }
 
 .time-slot:hover {
-  background: #e31837;
-  color: white;
-  transform: translateY(-1px);
+  border-color: #e31837;
+  background: #fff;
+  transform: translateY(-2px);
 }
 
-.time-slot:active {
-  transform: translateY(1px);
+.time-slot.selected {
+  background: #fff;
+  border-color: #e31837;
+  box-shadow: 0 2px 8px rgba(227, 24, 55, 0.15);
+}
+
+.time-slot.last-table {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.time-text {
+  font-weight: 600;
+  font-size: 16px;
+  color: #1a202c;
+  margin-bottom: 4px;
+}
+
+.table-info {
+  font-size: 13px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+  display: inline-block;
+}
+
+.dot.low {
+  background-color: #f59e0b;
+}
+
+.no-times {
+  color: #94a3b8;
+  font-size: 14px;
+  text-align: center;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+}
+
+.reserve-now-btn {
+  width: 100%;
+  padding: 12px;
+  background: #e31837;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: background 0.2s ease;
+  font-size: 15px;
+}
+
+.reserve-now-btn:hover {
+  background: #cc1530;
 }
 
 /* Responsive Design */
@@ -231,72 +338,8 @@
   .restaurant-card {
     max-width: 100%;
   }
-}
-
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-  .homepage {
-    background: linear-gradient(to bottom, #0f172a, #1e293b);
-  }
-
-  .search-section,
-  .restaurant-card {
-    background: #1e293b;
-  }
-
-  .restaurant-info h3 {
-    color: #f1f5f9;
-  }
-
-  .restaurant-info p,
-  .review-count {
-    color: #94a3b8;
-  }
-
-  .search-container select,
-  .search-container input {
-    background: #334155;
-    border-color: #475569;
-    color: #f1f5f9;
-  }
-
+  
   .time-slot {
-    background: #334155;
-    color: #f1f5f9;
-  }
-
-  .star-empty {
-    color: #475569;
-  }
-}
-
-/* Loading States */
-.restaurant-card.loading {
-  position: relative;
-  overflow: hidden;
-}
-
-.restaurant-card.loading::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
+    width: calc(50% - 5px);
   }
 }
