@@ -1,0 +1,56 @@
+.mng-sidebar {
+    width: 240px;
+    background-color: #2c3e50;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  
+  .mng-logo-container {
+    padding: 20px;
+    text-align: center;
+    background-color: #1a2a3a;
+  }
+  
+  .mng-logo {
+    font-size: 28px;
+    font-weight: bold;
+    color: #ff7f50;
+    background-color: #1a2a3a;
+    padding: 10px;
+    border-radius: 8px;
+    display: inline-block;
+    border: 2px solid #ff7f50;
+  }
+  
+  .mng-menu-items {
+    display: flex;
+    flex-direction: column;
+    padding: 15px 0;
+  }
+  
+  .mng-menu-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .mng-menu-item:hover {
+    background-color: #34495e;
+  }
+  
+  .mng-menu-item.active {
+    background-color: #3498db;
+  }
+  
+  .mng-menu-item .mng-icon {
+    margin-right: 12px;
+    font-size: 18px;
+  }
+  
+  .mng-menu-item .mng-label {
+    font-size: 14px;
+  }

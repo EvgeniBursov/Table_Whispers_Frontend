@@ -1,0 +1,138 @@
+.mng-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background-color: white;
+  border-bottom: 1px solid #e0e0e0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mng-date-time {
+  display: flex;
+  flex-direction: column;
+}
+
+.mng-date {
+  font-size: 14px;
+  color: #888;
+}
+
+.mng-time {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.mng-restaurant-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mng-restaurant-name {
+  font-size: 18px;
+  color: #333;
+  font-weight: 500;
+  margin: 0;
+}
+
+.mng-search-container {
+  flex-grow: 1;
+  max-width: 400px;
+  margin: 0 20px;
+}
+
+.mng-search-input {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 14px;
+  outline: none;
+}
+
+.mng-search-input:focus {
+  border-color: #3498db;
+}
+
+.mng-header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.mng-notification-icon {
+  font-size: 20px;
+  margin-right: 20px;
+  cursor: pointer;
+}
+
+.mng-user-profile {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-right: 20px;
+}
+
+.mng-avatar {
+  width: 35px;
+  height: 35px;
+  background-color: #e0e0e0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+}
+
+.mng-user-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* New Logout Button Styles */
+.mng-logout-btn {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 15px;
+  background-color: #f8f8f8;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+}
+
+.mng-logout-btn:hover {
+  background-color: #ffebeb;
+  border-color: #ffcece;
+  color: #e74c3c;
+}
+
+.mng-logout-icon {
+  font-size: 16px;
+  margin-right: 6px;
+}
+
+.mng-logout-text {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Responsive styles */
+@media screen and (max-width: 768px) {
+  .mng-header {
+    flex-wrap: wrap;
+    padding: 10px 15px;
+  }
+  
+  .mng-search-container {
+    order: 3;
+    max-width: 100%;
+    margin: 10px 0 0 0;
+  }
+  
+  .mng-header-actions {
+    margin-left: auto;
+  }
+}

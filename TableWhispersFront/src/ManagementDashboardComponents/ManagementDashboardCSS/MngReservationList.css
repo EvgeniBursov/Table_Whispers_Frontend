@@ -1,0 +1,166 @@
+.mng-reservation-list-container {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+    flex-grow: 1;
+  }
+  
+  .mng-reservation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .mng-reservation-header h2 {
+    font-size: 22px;
+    color: #333;
+  }
+  
+  .mng-reservation-filters {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .mng-filter-group {
+    display: flex;
+    align-items: center;
+  }
+  
+  .mng-filter-group label {
+    margin-right: 8px;
+    font-size: 14px;
+    color: #555;
+  }
+  
+  .mng-filter-group input[type="date"],
+  .mng-filter-group select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    outline: none;
+  }
+  
+  .mng-add-reservation-btn {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  
+  .mng-add-reservation-btn:hover {
+    background-color: #2980b9;
+  }
+  
+  .mng-reservation-table-container {
+    overflow-x: auto;
+  }
+  
+  .mng-reservation-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+  }
+  
+  .mng-reservation-table thead {
+    background-color: #f5f7fa;
+  }
+  
+  .mng-reservation-table th {
+    text-align: left;
+    padding: 12px 15px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #444;
+    border-bottom: 2px solid #e0e0e0;
+  }
+  
+  .mng-reservation-table td {
+    padding: 12px 15px;
+    font-size: 14px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .mng-reservation-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .mng-reservation-row:hover {
+    background-color: #f0f7ff;
+  }
+  
+  .mng-status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: capitalize;
+  }
+  
+  .mng-status-confirmed {
+    background-color: #e6f7ee;
+    color: #2ecc71;
+  }
+  
+  .mng-status-pending {
+    background-color: #fff7e6;
+    color: #f1c40f;
+  }
+  
+  .mng-status-cancelled {
+    background-color: #ffe6e6;
+    color: #e74c3c;
+  }
+  
+  .mng-status-completed {
+    background-color: #e0e0e0;
+    color: #7f8c8d;
+  }
+  
+  .mng-action-buttons {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .mng-action-btn {
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .mng-edit-btn {
+    background-color: #3498db;
+    color: white;
+  }
+  
+  .mng-edit-btn:hover {
+    background-color: #2980b9;
+  }
+  
+  .mng-cancel-btn {
+    background-color: #e74c3c;
+    color: white;
+  }
+  
+  .mng-cancel-btn:hover {
+    background-color: #c0392b;
+  }
+  
+  .mng-no-reservations {
+    text-align: center;
+    padding: 30px;
+    color: #777;
+    font-style: italic;
+  }

@@ -1,0 +1,44 @@
+.mng-empty-state {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    height: 100%;
+    text-align: center;
+  }
+  
+  .mng-empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+  }
+  
+  .mng-empty-state-title {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+  
+  .mng-empty-state-message {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 25px;
+    max-width: 400px;
+  }
+  
+  .mng-empty-state-action {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+  
+  .mng-empty-state-action:hover {
+    background-color: #2980b9;
+  }

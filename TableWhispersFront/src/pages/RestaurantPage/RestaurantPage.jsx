@@ -21,7 +21,7 @@ const RestaurantPage = () => {
         if (token) {
           setIsLoggedIn(true);
           setCurrentUser({
-            id: localStorage.getItem('userId'), // אם יש לך
+            id: localStorage.getItem('userId'),
             email: userEmail
           });
         }
