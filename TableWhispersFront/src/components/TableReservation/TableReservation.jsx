@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import './TableReservation.css';
 
-const TableReservation = ({ restaurantId, restaurantName, userId }) => {
-    const [selectedPeople, setSelectedPeople] = useState(2);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
-    const [selectedTime, setSelectedTime] = useState('');
+const TableReservation = ({ 
+  restaurantId, 
+  restaurantName, 
+  initialDate,
+  initialTime,
+  initialPeople,
+  onReservationComplete
+}) => {
+    const [selectedPeople, setSelectedPeople] = useState(initialPeople || 2);
+    const [selectedDate, setSelectedDate] = useState(initialDate || new Date().toISOString().split("T")[0]);
+    const [selectedTime, setSelectedTime] = useState(initialTime || '');
     const [isLoading, setIsLoading] = useState(false);
     const [loadingTimes, setLoadingTimes] = useState(false);
     const [reservationStatus, setReservationStatus] = useState(null);
@@ -121,8 +128,11 @@ const TableReservation = ({ restaurantId, restaurantName, userId }) => {
             
             setAvailableTimes(slots);
             
-            // Set first time slot as default selection
-            if (slots.length > 0) {
+            // If initial time is provided and valid, use it
+            if (initialTime && slots.includes(initialTime)) {
+              setSelectedTime(initialTime);
+            } else if (slots.length > 0) {
+              // Otherwise, set first time slot as default selection
               setSelectedTime(slots[0]);
             }
           }
@@ -284,6 +294,11 @@ const TableReservation = ({ restaurantId, restaurantName, userId }) => {
         } else {
           setReservationStatus('success');
           setReservationDetails(data.reservation);
+          
+          // Call the callback if provided
+          if (onReservationComplete) {
+            onReservationComplete(data.reservation);
+          }
         } 
  
       } catch (error) {
