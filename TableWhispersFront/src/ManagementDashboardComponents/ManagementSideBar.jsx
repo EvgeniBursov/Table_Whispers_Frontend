@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './ManagementDashboardCSS/MngSidebar.css';
 
+
 const ManagementSideBar = ({ activeView, setActiveView }) => {
   const [restaurantName, setRestaurantName] = useState('Loading...');
   const restaurantId = '67937038eb604c7927e85d2a';
@@ -27,7 +28,6 @@ const ManagementSideBar = ({ activeView, setActiveView }) => {
     { id: 'customers', label: 'Customers', icon: '👥' },
     { id: 'orders', label: 'Orders', icon: '🧾' },
     { id: 'menu', label: 'Menu', icon: '🍲' },
-    { id: 'staff', label: 'Staff', icon: '👨‍🍳' },
     { id: 'analytics', label: 'Analytics', icon: '📊' },
     { id: 'settings', label: 'Settings', icon: '⚙️' },
   ];

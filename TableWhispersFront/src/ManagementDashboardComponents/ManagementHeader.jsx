@@ -1,21 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ManagementDashboardCSS/MngHeader.css';
 
 const ManagementHeader = ({ restaurant }) => {
   const navigate = useNavigate();
+  const [currentTime, setCurrentTime] = useState(new Date());
   
-  const today = new Date();
-  const formattedDate = today.toLocaleDateString('en-US', {
+  // Update the time every second for real-time clock
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId);
+  }, []);
+  
+  const formattedDate = currentTime.toLocaleDateString('en-US', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
   });
   
-  const formattedTime = today.toLocaleTimeString('en-US', {
-    hour: 'numeric',
+  // Use 24-hour format (hour12: false)
+  const formattedTime = currentTime.toLocaleTimeString('en-US', {
+    hour: '2-digit',
     minute: '2-digit',
-    hour12: true
+    second: '2-digit',
+    hour12: false  // Use 24-hour format
   });
   
   // Handle logout functionality

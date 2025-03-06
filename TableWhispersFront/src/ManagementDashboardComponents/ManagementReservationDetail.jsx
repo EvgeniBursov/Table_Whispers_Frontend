@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './ManagementDashboardCSS/MngReservationDetail.css';
+import CustomerReservationHistory from './ManagementCustomerReservationHistory';
 
-// Define the utility functions that are needed
-const formatTime12h = (dateString) => {
+const formatTime24h = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleTimeString('en-US', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: false
+  });
 };
 
 const formatDate = (dateString) => {
@@ -15,21 +19,142 @@ const formatDate = (dateString) => {
 const calculateDuration = (startTime, endTime) => {
   const start = new Date(startTime);
   const end = new Date(endTime);
-  const duration = Math.round((end - start) / (1000 * 60)); // duration in minutes
+  const duration = Math.round((end - start) / (1000 * 60));
   return `${duration} min`;
 };
 
 const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, loading }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    date: '',
+    time: '',
+    guests: ''
+  });
+  const [formError, setFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showHistory, setShowHistory] = useState(true);
+
   if (!reservation) return null;
   
-  // Extract customer and orderDetails from the structure used in the list component
   const customer = reservation.customer || {};
   const orderDetails = reservation.orderDetails || {};
   
-  // Check if there are allergies to display
   const hasAllergies = customer.allergies && 
                        Array.isArray(customer.allergies) &&
                        customer.allergies.length > 0;
+
+  const handleEditClick = () => {
+    if (orderDetails.startTime) {
+      const startDate = new Date(orderDetails.startTime);
+      const formattedDate = startDate.toISOString().split('T')[0];
+      const formattedTime = startDate.toTimeString().slice(0, 5);
+      
+      setEditFormData({
+        date: formattedDate,
+        time: formattedTime,
+        guests: orderDetails.guests || 2
+      });
+    }
+    
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setFormError('');
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData({
+      ...editFormData,
+      [name]: value
+    });
+  };
+
+  const handleSubmitEdit = async (e) => {
+    e.preventDefault();
+    
+    if (!editFormData.date || !editFormData.time || !editFormData.guests) {
+      setFormError('All fields are required');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setFormError('');
+    
+    try {
+      const startTime = new Date(`${editFormData.date}T${editFormData.time}`);
+      
+      const endTime = new Date(startTime);
+      endTime.setHours(endTime.getHours() + 2);
+      
+      const startTimeISO = startTime.toISOString();
+      const endTimeISO = endTime.toISOString();
+      
+      const apiUrl = 'http://localhost:7000';
+      const response = await fetch(`${apiUrl}/update_Reservation_Details/restaurant`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': localStorage.getItem('token') || ''
+        },
+        body: JSON.stringify({
+          reservation_id: reservation.id,
+          date: editFormData.date,
+          time: editFormData.time,
+          guests: parseInt(editFormData.guests, 10)
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        setFormError(data.message || 'Failed to update reservation');
+        return;
+      }
+      
+      if (onUpdateStatus) {
+        onUpdateStatus('update', {
+          id: reservation.id,
+          orderDetails: {
+            ...orderDetails,
+            startTime: startTimeISO,
+            endTime: endTimeISO,
+            guests: parseInt(editFormData.guests, 10)
+          }
+        });
+      }
+      
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating reservation:', error);
+      setFormError('An error occurred while updating the reservation');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelReservation = async () => {
+    if (window.confirm('Are you sure you want to cancel this reservation?')) {
+      try {
+        if (onUpdateStatus) {
+          await onUpdateStatus('cancelled');
+        }
+      } catch (error) {
+        console.error('Error cancelling reservation:', error);
+        alert('Failed to cancel reservation. Please try again.');
+      }
+    }
+  };
+  
+  const handleToggleHistory = () => {
+    setShowHistory(!showHistory);
+  };
+  
+  const handleSelectHistoryReservation = (historyReservation) => {
+    console.log('Selected reservation from history:', historyReservation);
+  };
   
   return (
     <div className="mng-reservation-detail-container">
@@ -41,7 +166,6 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
       <div className="mng-detail-content">
         <div className="mng-detail-section">
           <h3>Customer Information</h3>
-          {/* Display customer image only for registered users */}
           {customer.userType === "registered" && (
             <div className="mng-customer-image-container">
               {customer.profileImage ? (
@@ -98,116 +222,222 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
         
         <div className="mng-detail-section">
           <h3>Reservation Information</h3>
-          {orderDetails.startTime && (
-            <>
-              <div className="mng-detail-row">
-                <div className="mng-detail-label">Date:</div>
-                <div className="mng-detail-value">{formatDate(orderDetails.startTime)}</div>
+          
+          {customer.userType === "registered" && (
+            <div className="mng-history-toggle">
+              <button 
+                className="mng-history-toggle-btn"
+                onClick={handleToggleHistory}
+              >
+                {showHistory ? 'Hide Reservation History' : 'Show Reservation History'}
+              </button>
+            </div>
+          )}
+          
+          {showHistory && customer.userType === "registered" && (
+            <div className="mng-history-container">
+              <h4 className="mng-history-title">Reservation History</h4>
+              <CustomerReservationHistory 
+                customer={{
+                  id: customer.id,
+                  email: customer.email
+                }}
+                onSelectReservation={handleSelectHistoryReservation}
+              />
+            </div>
+          )}
+          
+          {isEditing ? (
+            <form className="mng-edit-form" onSubmit={handleSubmitEdit}>
+              {formError && <div className="mng-form-error">{formError}</div>}
+              
+              <div className="mng-form-group">
+                <label>Date:</label>
+                <input 
+                  type="date" 
+                  name="date"
+                  value={editFormData.date}
+                  onChange={handleInputChange}
+                  min={new Date().toISOString().split("T")[0]}
+                  required
+                />
               </div>
-              <div className="mng-detail-row">
-                <div className="mng-detail-label">Time:</div>
-                <div className="mng-detail-value">{formatTime12h(orderDetails.startTime)}</div>
+              
+              <div className="mng-form-group">
+                <label>Time (24h):</label>
+                <input 
+                  type="time" 
+                  name="time"
+                  value={editFormData.time}
+                  onChange={handleInputChange}
+                  required
+                />
               </div>
-            </>
-          )}
-          
-          {orderDetails.endTime && (
-            <div className="mng-detail-row">
-              <div className="mng-detail-label">End Time:</div>
-              <div className="mng-detail-value">{formatTime12h(orderDetails.endTime)}</div>
-            </div>
-          )}
-          
-          {orderDetails.startTime && orderDetails.endTime && (
-            <div className="mng-detail-row">
-              <div className="mng-detail-label">Duration:</div>
-              <div className="mng-detail-value">{calculateDuration(orderDetails.startTime, orderDetails.endTime)}</div>
-            </div>
-          )}
-          
-          <div className="mng-detail-row">
-            <div className="mng-detail-label">Table:</div>
-            <div className="mng-detail-value">{orderDetails.tableNumber || 'Not assigned'}</div>
-          </div>
-          
-          <div className="mng-detail-row">
-            <div className="mng-detail-label">Number of Guests:</div>
-            <div className="mng-detail-value">{orderDetails.guests || 'Not specified'}</div>
-          </div>
-          
-          <div className="mng-detail-row">
-            <div className="mng-detail-label">Status:</div>
-            <div className="mng-detail-value">
-              <span className={`mng-status-badge ${getStatusClass(orderDetails.status)}`}>
-                {orderDetails.status || 'Not specified'}
-              </span>
-            </div>
-          </div>
-          
-          {orderDetails.orderDate && (
-            <div className="mng-detail-row">
-              <div className="mng-detail-label">Order Date:</div>
-              <div className="mng-detail-value">{formatDate(orderDetails.orderDate)}</div>
+              
+              <div className="mng-form-group">
+                <label>Number of Guests:</label>
+                <select 
+                  name="guests"
+                  value={editFormData.guests}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="1">1 person</option>
+                  <option value="2">2 people</option>
+                  <option value="3">3 people</option>
+                  <option value="4">4 people</option>
+                  <option value="5">5 people</option>
+                  <option value="6">6 people</option>
+                  <option value="8">8 people</option>
+                  <option value="10">10 people</option>
+                </select>
+              </div>
+              
+              <div className="mng-form-actions">
+                <button 
+                  type="button" 
+                  className="mng-btn mng-cancel-btn"
+                  onClick={handleCancelEdit}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="mng-btn mng-save-btn"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="mng-reservation-details">
+              {orderDetails.startTime && (
+                <>
+                  <div className="mng-detail-row">
+                    <div className="mng-detail-label">Date:</div>
+                    <div className="mng-detail-value">{formatDate(orderDetails.startTime)}</div>
+                  </div>
+                  <div className="mng-detail-row">
+                    <div className="mng-detail-label">Time:</div>
+                    <div className="mng-detail-value">{formatTime24h(orderDetails.startTime)}</div>
+                  </div>
+                </>
+              )}
+              
+              {orderDetails.endTime && (
+                <div className="mng-detail-row">
+                  <div className="mng-detail-label">End Time:</div>
+                  <div className="mng-detail-value">{formatTime24h(orderDetails.endTime)}</div>
+                </div>
+              )}
+              
+              {orderDetails.startTime && orderDetails.endTime && (
+                <div className="mng-detail-row">
+                  <div className="mng-detail-label">Duration:</div>
+                  <div className="mng-detail-value">{calculateDuration(orderDetails.startTime, orderDetails.endTime)}</div>
+                </div>
+              )}
+              
+              <div className="mng-detail-row">
+                <div className="mng-detail-label">Table:</div>
+                <div className="mng-detail-value">{orderDetails.tableNumber || 'Not assigned'}</div>
+              </div>
+              
+              <div className="mng-detail-row">
+                <div className="mng-detail-label">Number of Guests:</div>
+                <div className="mng-detail-value">{orderDetails.guests || 'Not specified'}</div>
+              </div>
+              
+              <div className="mng-detail-row">
+                <div className="mng-detail-label">Status:</div>
+                <div className="mng-detail-value">
+                  <span className={`mng-status-badge ${getStatusClass(orderDetails.status)}`}>
+                    {orderDetails.status || 'Not specified'}
+                  </span>
+                </div>
+              </div>
+              
+              {orderDetails.orderDate && (
+                <div className="mng-detail-row">
+                  <div className="mng-detail-label">Order Date:</div>
+                  <div className="mng-detail-value">{formatDate(orderDetails.orderDate)}</div>
+                </div>
+              )}
             </div>
           )}
         </div>
-        
-
       </div>
       
       <div className="mng-detail-actions">
-        <button className="mng-action-btn mng-edit-btn">Edit Reservation</button>
-        {orderDetails.status !== 'cancelled' && (
-          <button 
-            className="mng-action-btn mng-cancel-btn"
-            onClick={() => onUpdateStatus('cancelled')}
-            disabled={loading}
-          >
-            Cancel Reservation
-          </button>
-        )}
-        {orderDetails.status === 'planning' && (
-          <button 
-            className="mng-action-btn mng-confirm-btn"
-            onClick={() => onUpdateStatus('confirmed')}
-            disabled={loading}
-          >
-            Confirm Reservation
-          </button>
-        )}
-        {orderDetails.status === 'confirmed' && (
-          <button 
-            className="mng-action-btn mng-seated-btn"
-            onClick={() => onUpdateStatus('seated')}
-            disabled={loading}
-          >
-            Mark as Seated
-          </button>
-        )}
-        {orderDetails.status === 'seated' && (
-          <button 
-            className="mng-action-btn mng-complete-btn"
-            onClick={() => onUpdateStatus('completed')}
-            disabled={loading}
-          >
-            Mark as Complete
-          </button>
+        {!isEditing && (
+          <>
+            <button 
+              className="mng-action-btn mng-edit-btn"
+              onClick={handleEditClick}
+              disabled={orderDetails.status === 'cancelled' || orderDetails.status === 'done'}
+            >
+              Edit Reservation
+            </button>
+            
+            {orderDetails.status !== 'cancelled' && orderDetails.status !== 'done' && (
+              <button 
+                className="mng-action-btn mng-cancel-btn"
+                onClick={handleCancelReservation}
+                disabled={loading}
+              >
+                Cancel Reservation
+              </button>
+            )}
+            
+            {orderDetails.status === 'planning' && (
+              <button 
+                className="mng-action-btn mng-confirm-btn"
+                onClick={() => onUpdateStatus('confirmed')}
+                disabled={loading}
+              >
+                Confirm Reservation
+              </button>
+            )}
+            
+            {orderDetails.status === 'confirmed' && (
+              <button 
+                className="mng-action-btn mng-seated-btn"
+                onClick={() => onUpdateStatus('seated')}
+                disabled={loading}
+              >
+                Mark as Seated
+              </button>
+            )}
+            
+            {orderDetails.status === 'seated' && (
+              <button 
+                className="mng-action-btn mng-complete-btn"
+                onClick={() => onUpdateStatus('done')}
+                disabled={loading}
+              >
+                Mark as Complete
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>
   );
 };
 
-// Helper function to get status class
 const getStatusClass = (status) => {
   switch (status?.toLowerCase()) {
     case 'confirmed': return 'mng-status-confirmed';
     case 'planning': return 'mng-status-pending';
     case 'cancelled': return 'mng-status-cancelled';
-    case 'completed': return 'mng-status-completed';
-    case 'seated': return 'mng-status-seated'; // New status for customers who have arrived
+    case 'done': return 'mng-status-completed';
+    case 'seated': return 'mng-status-seated';
     default: return '';
   }
 };
+
+
 
 export default ManagementReservationDetail;

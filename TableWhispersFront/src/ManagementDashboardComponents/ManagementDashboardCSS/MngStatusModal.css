@@ -1,0 +1,128 @@
+/* Status Modal Styles */
+.mng-status-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .mng-status-modal {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .mng-status-modal h3 {
+    margin-top: 0;
+    color: #333;
+    font-size: 18px;
+  }
+  
+  .mng-status-modal p {
+    color: #666;
+    margin-bottom: 15px;
+  }
+  
+  .mng-status-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 20px 0;
+  }
+  
+  .mng-status-btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    flex: 1;
+    min-width: 100px;
+  }
+  
+  .mng-status-planning {
+    background-color: #fff7e6;
+    color: #f1c40f;
+  }
+  
+  .mng-status-planning:hover {
+    background-color: #f1c40f;
+    color: white;
+  }
+  
+  .mng-status-seated {
+    background-color: #e6f7ee;
+    color: #2ecc71;
+  }
+  
+  .mng-status-seated:hover {
+    background-color: #2ecc71;
+    color: white;
+  }
+  
+  .mng-status-done {
+    background-color: #e6f7ff;
+    color: #3498db;
+  }
+  
+  .mng-status-done:hover {
+    background-color: #3498db;
+    color: white;
+  }
+  
+  .mng-modal-close {
+    width: 100%;
+    padding: 8px;
+    background-color: #f1f1f1;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+    color: #555;
+  }
+  
+  .mng-modal-close:hover {
+    background-color: #e0e0e0;
+  }
+  
+  /* Realtime badge */
+  .mng-realtime-badge {
+    display: inline-block;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  
+  /* Update status badge styles for the new status values */
+  .mng-status-badge.mng-status-pending {
+    background-color: #fff7e6;
+    color: #f1c40f;
+  }
+  
+  .mng-status-badge.mng-status-confirmed {
+    background-color: #e6f7ee;
+    color: #2ecc71;
+  }
+  
+  .mng-status-badge.mng-status-cancelled {
+    background-color: #ffe6e6;
+    color: #e74c3c;
+  }
+  
+  .mng-status-badge.mng-status-completed {
+    background-color: #e6f7ff;
+    color: #3498db;
+  }

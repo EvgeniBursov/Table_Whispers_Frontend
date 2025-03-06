@@ -1,168 +1,232 @@
-.mng-new-reservation-container {
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    width: 90%;
-    max-width: 800px;
-    max-height: 90vh;
-    overflow-y: auto;
-    padding: 0;
+/* MngNewReservationForm.css */
+
+.mng-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(4px);
+}
+
+.mng-new-reservation-form {
+  background-color: white;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: modal-appear 0.3s ease-out forwards;
+}
+
+@keyframes modal-appear {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-  
-  .mng-form-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    border-bottom: 1px solid #e0e0e0;
-    background-color: #f5f7fa;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mng-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.mng-form-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1a202c;
+  font-weight: 600;
+}
+
+.mng-form-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #64748b;
+  transition: color 0.2s ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.mng-form-close-btn:hover {
+  color: #e31837;
+}
+
+.mng-form-content {
+  padding: 0;
+}
+
+/* Override TableReservation styles to fit within our modal */
+.mng-form-content .table-reservation {
+  margin: 0;
+  box-shadow: none;
+  border-radius: 0 0 12px 12px;
+  padding: 20px;
+}
+
+.mng-form-content .booking-form {
+  gap: 20px;
+}
+
+.mng-form-content .find-table-btn {
+  background: #e31837;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 14px;
+  transition: background 0.3s;
+}
+
+.mng-form-content .find-table-btn:hover {
+  background: #c41530;
+}
+
+.mng-form-content .find-table-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Reservation confirmation styling */
+.mng-form-content .reservation-confirmation {
+  box-shadow: none;
+  margin: 0;
+  padding: 20px;
+}
+
+.mng-form-content .confirmation-header {
+  background-color: transparent;
+  border-bottom: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px 0 20px 0;
+}
+
+.mng-form-content .success-checkmark {
+  width: 60px;
+  height: 60px;
+  background-color: #4CAF50;
+  font-size: 28px;
+  margin-top: 15px;
+}
+
+.mng-form-content .confirmation-details {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.mng-form-content .detail-row {
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+  margin: 0;
+}
+
+.mng-form-content .detail-row:last-child {
+  border-bottom: none;
+}
+
+.mng-form-content .detail-label {
+  font-weight: 600;
+  color: #555;
+  width: 120px;
+}
+
+.mng-form-content .new-reservation-btn {
+  background-color: #e31837;
+  width: auto;
+  margin: 10px auto;
+  display: block;
+}
+
+/* Error message styling */
+.mng-form-content .error-message {
+  margin: 15px 20px 0;
+}
+
+/* Time slot styling */
+.mng-form-content .time-select option:disabled {
+  color: #ccc;
+}
+
+/* Availability warning */
+.mng-form-content .low-availability-warning {
+  margin: 5px 0 15px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .mng-new-reservation-form {
+    width: 95%;
+    max-height: 95vh;
   }
   
   .mng-form-header h2 {
-    font-size: 20px;
-    color: #333;
+    font-size: 1.1rem;
   }
   
-  .mng-close-btn {
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: #777;
-    cursor: pointer;
+  .mng-form-content .table-reservation {
+    padding: 15px;
   }
   
-  .mng-close-btn:hover {
-    color: #333;
+  .mng-form-content .booking-form-grid {
+    grid-template-columns: 1fr;
   }
   
-  .mng-form-error {
-    background-color: #ffe6e6;
-    color: #e74c3c;
-    padding: 10px 15px;
-    margin: 15px 20px 0;
-    border-radius: 4px;
-    font-size: 14px;
+  .mng-form-content .detail-row {
+    flex-direction: column;
   }
   
-  .mng-reservation-form {
-    padding: 20px;
-  }
-  
-  .mng-form-section {
-    margin-bottom: 25px;
-  }
-  
-  .mng-form-section h3 {
-    margin-bottom: 15px;
-    font-size: 16px;
-    color: #444;
-    font-weight: 600;
-  }
-  
-  .mng-form-row {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 15px;
-  }
-  
-  .mng-form-group {
-    flex: 1;
-    margin-bottom: 15px;
-  }
-  
-  .mng-form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 14px;
-    color: #555;
-    font-weight: 500;
-  }
-  
-  .mng-form-group input,
-  .mng-form-group select,
-  .mng-form-group textarea {
+  .mng-form-content .detail-label {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    margin-bottom: 5px;
+  }
+}
+
+/* Small mobile phones */
+@media (max-width: 374px) {
+  .mng-form-content .find-table-btn {
     font-size: 14px;
+    padding: 12px;
   }
   
-  .mng-form-group input:focus,
-  .mng-form-group select:focus,
-  .mng-form-group textarea:focus {
-    outline: none;
-    border-color: #3498db;
+  .mng-form-content .confirmation-header h2 {
+    font-size: 18px;
+  }
+}
+
+/* Fix iOS date input appearance */
+@supports (-webkit-touch-callout: none) {
+  .mng-form-content input[type="date"] {
+    min-height: 40px;
   }
   
-  .mng-form-group textarea {
-    min-height: 80px;
-    resize: vertical;
+  .mng-new-reservation-form {
+    -webkit-transform: translateZ(0);
   }
-  
-  .mng-time-select {
-    cursor: pointer;
-  }
-  
-  .mng-time-select option.mng-high-availability {
-    background-color: #e6f7ee;
-  }
-  
-  .mng-time-select option.mng-medium-availability {
-    background-color: #fff7e6;
-  }
-  
-  .mng-time-select option.mng-low-availability {
-    background-color: #ffe6e6;
-  }
-  
-  .mng-availability-warning {
-    color: #e74c3c;
-    font-size: 13px;
-    margin-top: 8px;
-    font-weight: 500;
-  }
-  
-  .mng-form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-  }
-  
-  .mng-save-btn, 
-  .mng-cancel-btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-  }
-  
-  .mng-save-btn {
-    background-color: #3498db;
-    color: white;
-  }
-  
-  .mng-save-btn:hover {
-    background-color: #2980b9;
-  }
-  
-  .mng-save-btn:disabled {
-    background-color: #95a5a6;
-    cursor: not-allowed;
-  }
-  
-  .mng-cancel-btn {
-    background-color: #e0e0e0;
-    color: #333;
-  }
-  
-  .mng-cancel-btn:hover {
-    background-color: #d0d0d0;
-  }
+}
+
+/* Disable body scrolling when modal is open */
+body.modal-open {
+  overflow: hidden;
+}
