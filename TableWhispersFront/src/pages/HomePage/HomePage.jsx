@@ -18,6 +18,7 @@ const HomePage = () => {
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [selectedRestaurantTime, setSelectedRestaurantTime] = useState({});
   const [availabilityData, setAvailabilityData] = useState({}); // Store availability data by restaurant ID
+  
 
   // Reservation modal state
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
@@ -577,14 +578,20 @@ const HomePage = () => {
                   />
                   <div className="restaurant-info">
                     <h3>{restaurant.res_name}</h3>
-                    <div className="rating">
-                      {[...Array(5)].map((_, index) => (
-                        <span key={index} className={index < Math.floor(restaurant.rating) ? 'star-filled' : 'star-empty'}>
-                          ★
-                        </span>
-                      ))}
-                      <span className="rating-number">({restaurant.reviewCount || 0} reviews)</span>
-                    </div>
+                  <div className="rating">
+                    {[...Array(5)].map((_, index) => {
+                      const ratingValue = restaurant.rating || 0;
+                      
+                      if (index < Math.floor(ratingValue)) {
+                        return <span key={index} className="star-filled">★</span>;
+                      } else if (index < Math.floor(ratingValue + 0.5)) {
+                        return <span key={index} className="star-half">★</span>;
+                      } else {
+                        return <span key={index} className="star-empty">★</span>;
+                      }
+                    })}
+                    <span className="rating-number">({restaurant.number_of_rating || 0} reviews)</span>
+                  </div>
                     <p className="location">{restaurant.city || 'Unknown location'}</p>
                     <p className="description">{restaurant.description || ''}</p>
                     

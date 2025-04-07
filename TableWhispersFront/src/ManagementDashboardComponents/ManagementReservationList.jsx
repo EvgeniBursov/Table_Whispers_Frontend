@@ -3,6 +3,7 @@ import { io } from 'socket.io-client';
 import './ManagementDashboardCSS/MngReservationList.css';
 import './ManagementDashboardCSS/MngStatusModal.css';
 import MngEmptyState from './ManagementEmptyState';
+import TimeSelector from '../components/TimeSelector/TimeSelector';
 
 // For local development, use localhost with your server port
 const socketUrl = 'http://localhost:7000'; // Use your actual port here
@@ -19,7 +20,17 @@ const formatTime24h = (dateString) => {
   return date.toLocaleTimeString('en-US', { 
     hour: '2-digit', 
     minute: '2-digit',
-    hour12: false  // Use 24-hour format
+    hour12: false  
+  });
+};
+
+// Helper function to format time in 12-hour format with AM/PM
+const formatTime12h = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
   });
 };
 
@@ -45,6 +56,60 @@ const ManagementReservationList = ({
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [socketConnected, setSocketConnected] = useState(false);
+  
+  // Time filter state 
+  const [startTimeFilter, setStartTimeFilter] = useState('');
+  const [endTimeFilter, setEndTimeFilter] = useState('');
+
+  // Load reservations with table numbers
+  useEffect(() => {
+    const loadReservationsWithTableNumbers = async () => {
+      try {
+        // If we already have reservations but need to fetch table numbers
+        if (Array.isArray(reservations) && reservations.length > 0) {
+          // Make a call to get table assignments
+          const response = await fetch(`${apiUrl}/get_table_assignments`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': localStorage.getItem('token') || ''
+            }
+          });
+          
+          if (response.ok) {
+            const tableData = await response.json();
+            
+            // Update reservations with table data
+            const updatedReservations = reservations.map(res => {
+              // Find table assignment for this reservation
+              const tableAssignment = tableData.find(t => t.reservation_id === res.id);
+              
+              if (tableAssignment) {
+                return {
+                  ...res,
+                  tableNumber: tableAssignment.table_number,
+                  orderDetails: {
+                    ...res.orderDetails,
+                    tableNumber: tableAssignment.table_number
+                  }
+                };
+              }
+              return res;
+            });
+            
+            // Update parent state
+            if (setReservations) {
+              setReservations(updatedReservations);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading table assignments:', error);
+      }
+    };
+    
+    loadReservationsWithTableNumbers();
+  }, [reservations, setReservations]);
 
   // Set up WebSocket listeners
   useEffect(() => {
@@ -68,11 +133,13 @@ const ManagementReservationList = ({
         setReservations(prevReservations => 
           prevReservations.map(res => {
             if (res.id === data.reservationId) {
+              // Preserve tableNumber during updates
               return {
                 ...res,
                 orderDetails: {
                   ...res.orderDetails,
-                  status: data.newStatus
+                  status: data.newStatus,
+                  tableNumber: res.orderDetails.tableNumber || null
                 }
               };
             }
@@ -85,11 +152,13 @@ const ManagementReservationList = ({
       setFilteredReservations(prevReservations => 
         prevReservations.map(res => {
           if (res.id === data.reservationId) {
+            // Preserve tableNumber during updates
             return {
               ...res,
               orderDetails: {
                 ...res.orderDetails,
-                status: data.newStatus
+                status: data.newStatus,
+                tableNumber: res.orderDetails.tableNumber || null
               }
             };
           }
@@ -114,16 +183,58 @@ const ManagementReservationList = ({
       }
     });
 
+    // Listen for table assignments
+    socket.on('tableAssigned', (data) => {
+      console.log('Table assigned:', data);
+      
+      // Update reservations with new table assignment
+      if (setReservations) {
+        setReservations(prevReservations => 
+          prevReservations.map(res => {
+            if (res.id === data.reservationId) {
+              return {
+                ...res,
+                tableNumber: data.tableNumber,
+                orderDetails: {
+                  ...res.orderDetails,
+                  tableNumber: data.tableNumber
+                }
+              };
+            }
+            return res;
+          })
+        );
+      }
+      
+      // Update filtered reservations
+      setFilteredReservations(prevReservations => 
+        prevReservations.map(res => {
+          if (res.id === data.reservationId) {
+            return {
+              ...res,
+              tableNumber: data.tableNumber,
+              orderDetails: {
+                ...res.orderDetails,
+                tableNumber: data.tableNumber
+              }
+            };
+          }
+          return res;
+        })
+      );
+    });
+
     // Cleanup function
     return () => {
       socket.off('connect');
       socket.off('disconnect');
       socket.off('reservationUpdated');
       socket.off('reservationCreated');
+      socket.off('tableAssigned');
     };
-  }, [setReservations]);
+  }, [setReservations, dateFilter, statusFilter, startTimeFilter, endTimeFilter]);
 
-  // Filter reservations based on date and status
+  // Filter reservations based on date, time, and status
   useEffect(() => {
     if (!Array.isArray(reservations)) {
       setFilteredReservations([]);
@@ -145,6 +256,33 @@ const ManagementReservationList = ({
       console.log("No date filter applied - showing all dates");
     }
     
+    // Apply time range filter - now using hours only from the custom TimeSelector
+    if (startTimeFilter) {
+      console.log("Filtering by start time:", startTimeFilter);
+      filtered = filtered.filter(res => {
+        if (!res.orderDetails?.startTime) return false;
+        const resTime = new Date(res.orderDetails.startTime);
+        const [startHour] = startTimeFilter.split(':');
+        const startHourInt = parseInt(startHour, 10);
+        
+        return resTime.getHours() >= startHourInt;
+      });
+      console.log(`After start time filter: ${filtered.length} reservations`);
+    }
+    
+    if (endTimeFilter) {
+      console.log("Filtering by end time:", endTimeFilter);
+      filtered = filtered.filter(res => {
+        if (!res.orderDetails?.startTime) return false;
+        const resTime = new Date(res.orderDetails.startTime);
+        const [endHour] = endTimeFilter.split(':');
+        const endHourInt = parseInt(endHour, 10);
+        
+        return resTime.getHours() <= endHourInt;
+      });
+      console.log(`After end time filter: ${filtered.length} reservations`);
+    }
+    
     // Apply status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(res => 
@@ -161,7 +299,7 @@ const ManagementReservationList = ({
     });
     
     setFilteredReservations(filtered);
-  }, [reservations, dateFilter, statusFilter]);
+  }, [reservations, dateFilter, statusFilter, startTimeFilter, endTimeFilter]);
 
   const getStatusClass = (status) => {
     switch (status?.toLowerCase()) {
@@ -183,6 +321,27 @@ const ManagementReservationList = ({
       }
     }
     
+    // Check time filters
+    if (startTimeFilter) {
+      const resTime = new Date(reservation.orderDetails.startTime);
+      const [startHour] = startTimeFilter.split(':');
+      const startHourInt = parseInt(startHour, 10);
+      
+      if (resTime.getHours() < startHourInt) {
+        return false;
+      }
+    }
+    
+    if (endTimeFilter) {
+      const resTime = new Date(reservation.orderDetails.startTime);
+      const [endHour] = endTimeFilter.split(':');
+      const endHourInt = parseInt(endHour, 10);
+      
+      if (resTime.getHours() > endHourInt) {
+        return false;
+      }
+    }
+    
     // Check status filter
     if (statusFilter !== 'all' && 
         reservation.orderDetails.status.toLowerCase() !== statusFilter.toLowerCase()) {
@@ -199,6 +358,7 @@ const ManagementReservationList = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': localStorage.getItem('token') || ''
         },
         body: JSON.stringify({
           reservation_id: reservationId,
@@ -232,6 +392,33 @@ const ManagementReservationList = ({
     e.stopPropagation();
     setSelectedReservation(reservation);
     setShowStatusModal(true);
+  };
+
+  // Function to clear all filters
+  const clearAllFilters = () => {
+    setDateFilter('');
+    setStatusFilter('all');
+    setStartTimeFilter('');
+    setEndTimeFilter('');
+  };
+
+  // Helper function to get table display info
+  const getTableDisplay = (reservation) => {
+    // Check all possible places where table number might be stored
+    const tableNumber = 
+      (reservation.orderDetails && reservation.orderDetails.tableNumber) || 
+      reservation.tableNumber || 
+      null;
+    
+    if (tableNumber) {
+      return (
+        <span className="mng-table-number">
+          Table {tableNumber}
+        </span>
+      );
+    } else {
+      return <span className="mng-table-not-assigned">Not assigned</span>;
+    }
   };
 
   // Status Modal Component
@@ -299,12 +486,14 @@ const ManagementReservationList = ({
   return (
     <div className="mng-reservation-list-container">
       <div className="mng-reservation-header">
-        <h2>Reservations</h2>
-        {socketConnected && (
-          <div className="mng-realtime-badge">
-            Realtime Updates Active
-          </div>
-        )}
+        <div className="mng-header-top">
+          <h2>Reservations</h2>
+          {socketConnected && (
+            <div className="mng-realtime-badge">
+              Realtime Updates Active
+            </div>
+          )}
+        </div>
         <div className="mng-reservation-filters">
           <div className="mng-filter-group">
             <label>Date:</label>
@@ -316,19 +505,32 @@ const ManagementReservationList = ({
             {dateFilter && (
               <button 
                 onClick={() => setDateFilter('')}
-                style={{
-                  marginLeft: '5px',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  color: '#555'
-                }}
+                className="mng-clear-filter-btn"
               >
-                ✕ Clear
+                ✕
               </button>
             )}
           </div>
+          
+          {/* Time range filter using custom TimeSelector */}
+          <div className="mng-filter-group">
+            <label>From:</label>
+            <TimeSelector 
+              value={startTimeFilter}
+              onChange={setStartTimeFilter}
+              placeholder="Start"
+            />
+          </div>
+          
+          <div className="mng-filter-group">
+            <label>To:</label>
+            <TimeSelector 
+              value={endTimeFilter}
+              onChange={setEndTimeFilter}
+              placeholder="End"
+            />
+          </div>
+          
           <div className="mng-filter-group">
             <label>Status:</label>
             <select 
@@ -342,6 +544,17 @@ const ManagementReservationList = ({
               <option value="cancelled">Cancelled</option>
             </select>
           </div>
+          
+          {/* Clear all filters button */}
+          {(dateFilter || startTimeFilter || endTimeFilter || statusFilter !== 'all') && (
+            <button 
+              className="mng-clear-all-filters-btn"
+              onClick={clearAllFilters}
+            >
+              Clear All Filters
+            </button>
+          )}
+          
           <button className="mng-add-reservation-btn" onClick={onAddReservation}>
             + Add Reservation
           </button>
@@ -356,6 +569,7 @@ const ManagementReservationList = ({
                 <th>Time</th>
                 <th>Customer</th>
                 <th>Guests</th>
+                <th>Table</th> 
                 <th>Duration</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -368,18 +582,21 @@ const ManagementReservationList = ({
                   onClick={() => onSelectReservation(reservation)}
                   className="mng-reservation-row"
                 >
-                  <td>{formatTime24h(reservation.orderDetails.startTime)}</td>
+                  <td className="mng-time-column">{formatTime24h(reservation.orderDetails.startTime)}</td>
                   <td>
                     {reservation.customer ? (
                       <div>
                         <div>{reservation.customer.firstName} {reservation.customer.lastName}</div>
-                        <div style={{fontSize: '11px', color: '#666'}}>{reservation.customer.email}</div>
+                        <div className="mng-customer-email">{reservation.customer.email}</div>
                       </div>
                     ) : (
-                      <span style={{color: '#999'}}>No customer data</span>
+                      <span className="mng-no-customer-data">No customer data</span>
                     )}
                   </td>
                   <td>{reservation.orderDetails.guests}</td>
+                  <td>
+                    {getTableDisplay(reservation)}
+                  </td>
                   <td>
                     {calculateDuration(
                       reservation.orderDetails.startTime, 
@@ -415,10 +632,7 @@ const ManagementReservationList = ({
             title="No Matching Reservations" 
             message="No reservations found for the selected filters." 
             actionText="Clear Filters" 
-            onAction={() => {
-              setDateFilter('');
-              setStatusFilter('all');
-            }}
+            onAction={clearAllFilters}
           />
         )}
       </div>

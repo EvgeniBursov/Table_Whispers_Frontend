@@ -536,3 +536,50 @@
 .crh-pagination-info {
   color: #6b7280;
 }
+
+/* Add these styles to your MngReservationDetail.css file */
+
+.mng-table-number {
+  font-weight: 500;
+  color: #3498db;
+  background-color: #e6f7ff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.mng-table-not-assigned {
+  font-style: italic;
+  color: #999;
+  font-size: 13px;
+}
+
+.mng-form-help-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #777;
+  font-style: italic;
+}
+
+/* Adjust the form group spacing for the new table number field */
+.mng-form-group {
+  margin-bottom: 20px;
+}
+
+/* Make the table number input stand out a bit */
+.mng-form-group input[type="text"] {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: white;
+  transition: all 0.2s;
+}
+
+.mng-form-group input[type="text"]:focus {
+  border-color: #4a6da7;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(74, 109, 167, 0.25);
+}

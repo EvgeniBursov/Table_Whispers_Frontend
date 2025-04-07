@@ -7,7 +7,7 @@ const formatTime24h = (dateString) => {
   return date.toLocaleTimeString('en-US', { 
     hour: '2-digit', 
     minute: '2-digit',
-    hour12: false
+    hour12: false  
   });
 };
 
@@ -28,7 +28,8 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
   const [editFormData, setEditFormData] = useState({
     date: '',
     time: '',
-    guests: ''
+    guests: '',
+    tableNumber: ''
   });
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,7 +53,8 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
       setEditFormData({
         date: formattedDate,
         time: formattedTime,
-        guests: orderDetails.guests || 2
+        guests: orderDetails.guests || 2,
+        tableNumber: orderDetails.tableNumber || ''
       });
     }
     
@@ -72,11 +74,16 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
     });
   };
 
+  const getImageUrl = (imagePath) => {
+    if (imagePath.startsWith('http')) return imagePath;
+    return `http://localhost:5000${imagePath}`;
+};
+
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
     
     if (!editFormData.date || !editFormData.time || !editFormData.guests) {
-      setFormError('All fields are required');
+      setFormError('Date, time and guests are required fields');
       return;
     }
     
@@ -103,7 +110,8 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
           reservation_id: reservation.id,
           date: editFormData.date,
           time: editFormData.time,
-          guests: parseInt(editFormData.guests, 10)
+          guests: parseInt(editFormData.guests, 10),
+          tableNumber: editFormData.tableNumber || null
         }),
       });
       
@@ -121,7 +129,8 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
             ...orderDetails,
             startTime: startTimeISO,
             endTime: endTimeISO,
-            guests: parseInt(editFormData.guests, 10)
+            guests: parseInt(editFormData.guests, 10),
+            tableNumber: editFormData.tableNumber || null
           }
         });
       }
@@ -166,58 +175,80 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
       <div className="mng-detail-content">
         <div className="mng-detail-section">
           <h3>Customer Information</h3>
-          {customer.userType === "registered" && (
-            <div className="mng-customer-image-container">
-              {customer.profileImage ? (
-                <img 
-                  src={customer.profileImage} 
-                  alt={`${customer.firstName} ${customer.lastName}`}
-                  className="mng-customer-profile-image" 
-                />
-              ) : (
-                <div className="mng-customer-profile-placeholder">
-                  {customer.firstName && customer.firstName[0]}
-                  {customer.lastName && customer.lastName[0]}
+          
+          {/* Enhanced Customer Profile Section */}
+          <div className="mng-customer-profile-section">
+            {customer.userType === "registered" && (
+              <div className="mng-customer-image-container">
+                {customer.profileImage ? (
+                  <img 
+                    src={getImageUrl(customer.profileImage)} 
+                    alt={`${customer.firstName} ${customer.lastName}`}
+                    className="mng-customer-profile-image" 
+                  />
+                ) : (
+                  <div className="mng-customer-profile-placeholder">
+                    {customer.firstName && customer.firstName[0]}
+                    {customer.lastName && customer.lastName[0]}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className="mng-customer-details">
+              <div className="mng-detail-row">
+                <div className="mng-detail-label">Name:</div>
+                <div className="mng-detail-value">
+                  {customer.firstName && customer.lastName ? 
+                    `${customer.firstName} ${customer.lastName}` : 
+                    'Not provided'}
+                </div>
+              </div>
+              <div className="mng-detail-row">
+                <div className="mng-detail-label">Phone:</div>
+                <div className="mng-detail-value">{customer.phone || 'Not provided'}</div>
+              </div>
+              <div className="mng-detail-row">
+                <div className="mng-detail-label">Email:</div>
+                <div className="mng-detail-value">{customer.email || 'Not provided'}</div>
+              </div>
+              {customer.userType === "registered" && (
+              <div className="mng-detail-row">
+                <div className="mng-detail-label">Age:</div>
+                <div className="mng-detail-value">{customer.age || 'Not provided'}</div>
+              </div>
+            )}
+                        
+              {customer.userType === "registered" && (
+                <div className="mng-detail-row">
+                  <div className="mng-detail-label">Customer Type:</div>
+                  <div className="mng-detail-value">
+                    <span className="mng-customer-type-badge">Registered</span>
+                  </div>
+                </div>
+              )}
+              
+              {hasAllergies && (
+                <div className="mng-detail-row">
+                  <div className="mng-detail-label">Allergies:</div>
+                  <div className="mng-detail-value">
+                    <ul className="mng-allergies-list">
+                      {customer.allergies.map((allergy, index) => (
+                        <li key={index} className="mng-allergy-item">
+                          <span className="mng-allergy-name">{allergy.name}</span>
+                          {allergy.severity && (
+                            <span className={`mng-allergy-severity mng-severity-${allergy.severity.toLowerCase()}`}>
+                              {allergy.severity}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               )}
             </div>
-          )}
-          <div className="mng-detail-row">
-            <div className="mng-detail-label">Name:</div>
-            <div className="mng-detail-value">
-              {customer.firstName && customer.lastName ? 
-                `${customer.firstName} ${customer.lastName}` : 
-                'Not provided'}
-            </div>
           </div>
-          <div className="mng-detail-row">
-            <div className="mng-detail-label">Phone:</div>
-            <div className="mng-detail-value">{customer.phone || 'Not provided'}</div>
-          </div>
-          <div className="mng-detail-row">
-            <div className="mng-detail-label">Email:</div>
-            <div className="mng-detail-value">{customer.email || 'Not provided'}</div>
-          </div>
-          
-          {hasAllergies && (
-            <div className="mng-detail-row">
-              <div className="mng-detail-label">Allergies:</div>
-              <div className="mng-detail-value">
-                <ul className="mng-allergies-list">
-                  {customer.allergies.map((allergy, index) => (
-                    <li key={index} className="mng-allergy-item">
-                      <span className="mng-allergy-name">{allergy.name}</span>
-                      {allergy.severity && (
-                        <span className={`mng-allergy-severity mng-severity-${allergy.severity.toLowerCase()}`}>
-                          {allergy.severity}
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
         </div>
         
         <div className="mng-detail-section">
@@ -272,6 +303,18 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
                   onChange={handleInputChange}
                   required
                 />
+              </div>
+              
+              <div className="mng-form-group">
+                <label>Table Number:</label>
+                <input 
+                  type="text" 
+                  name="tableNumber"
+                  value={editFormData.tableNumber}
+                  onChange={handleInputChange}
+                  placeholder="Enter table number"
+                />
+                <small className="mng-form-help-text">Leave empty if not assigned yet</small>
               </div>
               
               <div className="mng-form-group">
@@ -342,7 +385,13 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
               
               <div className="mng-detail-row">
                 <div className="mng-detail-label">Table:</div>
-                <div className="mng-detail-value">{orderDetails.tableNumber || 'Not assigned'}</div>
+                <div className="mng-detail-value">
+                  {orderDetails.tableNumber ? (
+                    <span className="mng-table-number">Table {orderDetails.tableNumber}</span>
+                  ) : (
+                    <span className="mng-table-not-assigned">Not assigned</span>
+                  )}
+                </div>
               </div>
               
               <div className="mng-detail-row">
@@ -437,7 +486,5 @@ const getStatusClass = (status) => {
     default: return '';
   }
 };
-
-
 
 export default ManagementReservationDetail;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TableReservation from '../../components/TableReservation/TableReservation';
 import RestaurantReviews from '../../components/RestaurantReviews/RestaurantReviews';
+import AvailableTimeCards from '../../components/AvailableTimeCards/AvailableTimeCards';
 import { useParams } from 'react-router-dom';
 import './RestaurantPage.css';
 
@@ -13,6 +14,9 @@ const RestaurantPage = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
+    const [availableTimes, setAvailableTimes] = useState([]);
+    const [loadingAvailability, setLoadingAvailability] = useState(false);
+    const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -57,13 +61,20 @@ const RestaurantPage = () => {
                 <div className="header-content">
                         <h1>{restaurant.res_name}</h1>
                         <div className="restaurant-info">
-                            <div className="rating">
-                                {[...Array(5)].map((_, index) => (
-                                    <span key={index} className={index < Math.floor(restaurant.rating) ? 'star-filled' : 'star-empty'}>★</span>
-                                ))}
-                                <span className="rating-number">{restaurant.rating}</span>
+                        <div className="rating">
+                                {[...Array(5)].map((_, index) => {
+                                const ratingValue = restaurant.rating || 0;
+                                
+                                if (index < Math.floor(ratingValue)) {
+                                    return <span key={index} className="star-filled">★</span>;
+                                } else if (index < Math.floor(ratingValue + 0.5)) {
+                                    return <span key={index} className="star-half">★</span>;
+                                } else {
+                                    return <span key={index} className="star-empty">★</span>;
+                                }
+                                })}
+                                <span className="rating-number">({restaurant.number_of_rating || 0} reviews)</span>
                             </div>
-
                             <div className="contact-info">
                                 <p className="phone">{restaurant.phone_number}</p>
                                 <p className="address">{restaurant.full_address}</p>
@@ -72,12 +83,11 @@ const RestaurantPage = () => {
                         </div>
                     </div>
                 </div>
-
-               {/* הוספת קומפוננטת ההזמנות */}
                 <TableReservation 
                     restaurantId={id}
                     restaurantName={restaurant.res_name}
                 />
+
             {/* Navigation Tabs */}
             <div className="restaurant-nav">
                 <button className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}>Overview</button>

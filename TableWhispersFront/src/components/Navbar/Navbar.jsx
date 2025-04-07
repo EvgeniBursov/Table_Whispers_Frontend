@@ -31,9 +31,7 @@ const Navbar = ({setShowLogin}) => {
        <img src={assets.logo} alt="" className='logo' />
        <ul className="navbar-menu"></ul>
            <li onClick={()=>navigate("/HomePage") } className={menu==="Home Page"?"active":""}>Home Page</li>
-           <li onClick={()=>setMenu("Search")} className={menu==="Search"?"active":""}>Search</li>
            <li onClick={() => navigate('/restaurant/login')}>Restaurant</li>
-           <li onClick={()=>setMenu("Contact Us")} className={menu==="Contact Us"?"active":""}>Contact Us</li>
        {!token ? 
          <button onClick={()=>setShowLogin(true)}>sign up</button>
          :

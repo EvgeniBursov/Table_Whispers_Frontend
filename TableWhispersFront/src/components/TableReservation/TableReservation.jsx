@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './TableReservation.css';
+import TableSelection from './TableSelectionModel';
 
 const TableReservation = ({ 
   restaurantId, 
@@ -7,19 +8,24 @@ const TableReservation = ({
   initialDate,
   initialTime,
   initialPeople,
+  initialTable,
   onReservationComplete
 }) => {
     const [selectedPeople, setSelectedPeople] = useState(initialPeople || 2);
     const [selectedDate, setSelectedDate] = useState(initialDate || new Date().toISOString().split("T")[0]);
     const [selectedTime, setSelectedTime] = useState(initialTime || '');
+    const [selectedTable, setSelectedTable] = useState(initialTable || null);
     const [isLoading, setIsLoading] = useState(false);
     const [loadingTimes, setLoadingTimes] = useState(false);
+    const [loadingTables, setLoadingTables] = useState(false);
     const [reservationStatus, setReservationStatus] = useState(null);
     const [reservationDetails, setReservationDetails] = useState(null);
     const [bookingError, setBookingError] = useState(null);
     const [availableTimes, setAvailableTimes] = useState([]);
+    const [availableTables, setAvailableTables] = useState([]);
     const [restaurantData, setRestaurantData] = useState(null);
     const [tableAvailability, setTableAvailability] = useState({}); // Table availability info
+    const [showTableSelection, setShowTableSelection] = useState(false);
     
     // Guest information fields
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -41,6 +47,14 @@ const TableReservation = ({
       // Fetch restaurant data on mount
       fetchRestaurantData();
     }, []);
+
+    // When initialTable is provided, set it
+    useEffect(() => {
+      if (initialTable) {
+        setSelectedTable(initialTable);
+        setShowTableSelection(true);
+      }
+    }, [initialTable]);
 
     // Fetch restaurant data from the server
     const fetchRestaurantData = async () => {
@@ -198,6 +212,49 @@ const TableReservation = ({
       return 'low-availability';
     };
 
+    // Fetch available tables for the selected time
+    const fetchAvailableTables = async () => {
+      if (!selectedTime || !selectedDate) {
+        setBookingError('Please select a date and time first');
+        return;
+      }
+
+      setLoadingTables(true);
+      setBookingError(null);
+      
+      try {
+        const time12h = convertTo12Hour(selectedTime);
+        const response = await fetch(`http://localhost:7000/restaurant/${restaurantId}/tables?date=${selectedDate}&time=${time12h}&guests=${selectedPeople}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch available tables');
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          setAvailableTables(data.tables || []);
+          setShowTableSelection(true);
+        } else {
+          setBookingError(data.message || 'No tables available for selected time');
+          setAvailableTables([]);
+        }
+      } catch (error) {
+        console.error('Error fetching tables:', error);
+        setBookingError('Error loading tables. Please try again.');
+        setAvailableTables([]);
+      } finally {
+        setLoadingTables(false);
+      }
+    };
+
+    // When time is selected, fetch available tables
+    useEffect(() => {
+      if (selectedTime && showTableSelection) {
+        fetchAvailableTables();
+      }
+    }, [selectedTime, showTableSelection]);
+
     // Form validation for guest information
     const validateGuestInfo = () => {
       // Always require email (for all types of users)
@@ -265,6 +322,12 @@ const TableReservation = ({
           date: selectedDate
         };
         
+        // Add table selection if available
+        if (selectedTable) {
+          requestBody.tableId = selectedTable.id || selectedTable._id;
+          requestBody.tableNumber = selectedTable.table_number;
+        }
+        
         // Always include email - either from logged in user or form input
         if (isLoggedIn) {
           requestBody.user_email = localStorage.getItem('userEmail');
@@ -315,6 +378,21 @@ const TableReservation = ({
       setReservationStatus(null);
       setReservationDetails(null);
       setBookingError(null);
+    };
+
+    // Handle proceeding to table selection
+    const handleProceedToTableSelection = () => {
+      if (!selectedTime) {
+        setBookingError('Please select a time first');
+        return;
+      }
+      setShowTableSelection(true);
+      fetchAvailableTables();
+    };
+
+    // Handle selecting a table
+    const handleTableSelection = (table) => {
+      setSelectedTable(table);
     };
   
     // Render confirmation screen
@@ -367,6 +445,13 @@ const TableReservation = ({
               <span className="detail-value">{reservationDetails.guests}</span>
             </div>
             
+            {selectedTable && (
+              <div className="detail-row">
+                <span className="detail-label">Table:</span>
+                <span className="detail-value">Table {selectedTable.table_number}</span>
+              </div>
+            )}
+            
             <div className="detail-row">
               <span className="detail-label">Email:</span>
               <span className="detail-value">{isLoggedIn ? localStorage.getItem('userEmail') : guestEmail}</span>
@@ -406,7 +491,12 @@ const TableReservation = ({
               <label>Guests</label>
               <select 
                 value={selectedPeople}
-                onChange={(e) => setSelectedPeople(e.target.value)}
+                onChange={(e) => {
+                  setSelectedPeople(e.target.value);
+                  // Reset table selection if guest count changes
+                  setSelectedTable(null);
+                  setShowTableSelection(false);
+                }}
               >
                 <option value="1">1 person</option>
                 <option value="2">2 people</option>
@@ -425,7 +515,12 @@ const TableReservation = ({
                 type="date"
                 value={selectedDate}
                 min={new Date().toISOString().split("T")[0]}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  // Reset table selection if date changes
+                  setSelectedTable(null);
+                  setShowTableSelection(false);
+                }}
               />
             </div>
     
@@ -433,7 +528,12 @@ const TableReservation = ({
               <label>Time</label>
               <select 
                 value={selectedTime}
-                onChange={(e) => setSelectedTime(e.target.value)}
+                onChange={(e) => {
+                  setSelectedTime(e.target.value);
+                  // Reset table selection if time changes
+                  setSelectedTable(null);
+                  setShowTableSelection(false);
+                }}
                 disabled={loadingTimes || availableTimes.length === 0}
                 className="time-select"
               >
@@ -459,6 +559,28 @@ const TableReservation = ({
             <div className="low-availability-warning">
               ⚠️ Only 1 table available for this time - book soon!
             </div>
+          )}
+
+          {!showTableSelection && selectedTime && (
+            <div className="table-selection-proceed">
+              <button 
+                type="button" 
+                className="proceed-to-tables-btn"
+                onClick={handleProceedToTableSelection}
+                disabled={!selectedTime || loadingTimes}
+              >
+                Choose Your Table
+              </button>
+            </div>
+          )}
+
+          {/* Table selection component */}
+          {showTableSelection && (
+            <TableSelection 
+              availableTables={availableTables}
+              onTableSelect={handleTableSelection}
+              selectedTableId={selectedTable ? (selectedTable.id || selectedTable._id) : null}
+            />
           )}
 
           {/* Email field is always required */}
@@ -510,7 +632,7 @@ const TableReservation = ({
             className="find-table-btn" 
             disabled={isLoading || loadingTimes || availableTimes.length === 0}
           >
-            {isLoading ? 'Processing...' : 'Book Table'}
+            {isLoading ? 'Processing...' : (selectedTable ? `BOOK TABLE ${selectedTable.table_number}` : 'BOOK A TABLE')}
           </button>
         </form>
       </div>

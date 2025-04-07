@@ -1,166 +1,412 @@
 .mng-reservation-list-container {
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    overflow-y: auto;
-    flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  overflow-y: auto;
+  flex-grow: 1;
+  background-color: #f9fafb;
+}
+
+.mng-reservation-header {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.mng-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.mng-reservation-header h2 {
+  font-size: 22px;
+  color: #2d3748;
+  margin: 0;
+  font-weight: 600;
+}
+
+.mng-realtime-badge {
+  display: flex;
+  align-items: center;
+  background-color: #ebf8ff;
+  color: #3182ce;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid #bee3f8;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(49, 130, 206, 0.4);
   }
-  
-  .mng-reservation-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+  70% {
+    box-shadow: 0 0 0 6px rgba(49, 130, 206, 0);
   }
-  
-  .mng-reservation-header h2 {
-    font-size: 22px;
-    color: #333;
+  100% {
+    box-shadow: 0 0 0 0 rgba(49, 130, 206, 0);
   }
-  
+}
+
+.mng-realtime-badge::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #38a169;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.mng-reservation-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mng-filter-group {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.mng-filter-group label {
+  margin-right: 8px;
+  font-size: 14px;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.mng-filter-group input[type="date"],
+.mng-filter-group input[type="time"],
+.mng-filter-group select {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  outline: none;
+  font-size: 14px;
+  color: #2d3748;
+  background-color: #f8fafc;
+  transition: all 0.2s;
+}
+
+.mng-filter-group input[type="date"]:focus,
+.mng-filter-group input[type="time"]:focus,
+.mng-filter-group select:focus {
+  border-color: #4a6da7;
+  box-shadow: 0 0 0 3px rgba(74, 109, 167, 0.1);
+}
+
+.mng-time-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mng-time-separator {
+  color: #718096;
+  font-size: 14px;
+}
+
+.mng-clear-filter-btn {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  margin-left: 4px;
+}
+
+.mng-clear-filter-btn:hover {
+  color: #718096;
+}
+
+.mng-clear-all-filters-btn {
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  color: #4a5568;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mng-clear-all-filters-btn:hover {
+  background-color: #edf2f7;
+  border-color: #cbd5e0;
+}
+
+.mng-add-reservation-btn {
+  background-color: #4a6da7;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  margin-left: auto;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.mng-add-reservation-btn:hover {
+  background-color: #3d5a8a;
+}
+
+.mng-reservation-table-container {
+  overflow-x: auto;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mng-reservation-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mng-reservation-table thead {
+  background-color: #f8fafc;
+}
+
+.mng-reservation-table th {
+  text-align: left;
+  padding: 12px 15px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #4a5568;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.mng-reservation-table td {
+  padding: 12px 15px;
+  font-size: 14px;
+  color: #2d3748;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.mng-reservation-row {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.mng-reservation-row:hover {
+  background-color: #f7fafc;
+}
+
+.mng-time-column {
+  font-weight: 500;
+  color: #2d3748;
+  white-space: nowrap;
+}
+
+.mng-customer-email {
+  font-size: 11px;
+  color: #718096;
+  margin-top: 2px;
+}
+
+.mng-no-customer-data {
+  color: #a0aec0;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.mng-status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.mng-status-confirmed {
+  background-color: #c6f6d5;
+  color: #2f855a;
+}
+
+.mng-status-pending {
+  background-color: #bee3f8;
+  color: #2b6cb0;
+}
+
+.mng-status-cancelled {
+  background-color: #fed7d7;
+  color: #c53030;
+}
+
+.mng-status-completed {
+  background-color: #e9d8fd;
+  color: #6b46c1;
+}
+
+.mng-table-number {
+  font-weight: 500;
+  color: #4a6da7;
+}
+
+.mng-table-not-assigned {
+  font-style: italic;
+  color: #a0aec0;
+  font-size: 12px;
+}
+
+.mng-action-buttons {
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.mng-action-btn {
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.mng-edit-btn {
+  background-color: #4a6da7;
+  color: white;
+}
+
+.mng-edit-btn:hover {
+  background-color: #3d5a8a;
+}
+
+.mng-cancel-btn {
+  background-color: #e53e3e;
+  color: white;
+}
+
+.mng-cancel-btn:hover {
+  background-color: #c53030;
+}
+
+/* Status modal styles */
+.mng-status-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.mng-status-modal {
+  background-color: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+}
+
+.mng-status-modal h3 {
+  margin-top: 0;
+  color: #2d3748;
+  font-size: 18px;
+}
+
+.mng-status-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.mng-status-btn {
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mng-status-planning {
+  background-color: #bee3f8;
+  color: #2b6cb0;
+}
+
+.mng-status-planning:hover {
+  background-color: #90cdf4;
+}
+
+.mng-status-seated {
+  background-color: #fbd38d;
+  color: #c05621;
+}
+
+.mng-status-seated:hover {
+  background-color: #f6ad55;
+}
+
+.mng-status-done {
+  background-color: #e9d8fd;
+  color: #6b46c1;
+}
+
+.mng-status-done:hover {
+  background-color: #d6bcfa;
+}
+
+.mng-modal-close {
+  width: 100%;
+  padding: 10px;
+  background-color: #f7fafc;
+  border: 1px solid #e2e8f0;
+  color: #4a5568;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.mng-modal-close:hover {
+  background-color: #edf2f7;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
   .mng-reservation-filters {
-    display: flex;
-    align-items: center;
-    gap: 15px;
+    flex-direction: column;
+    align-items: stretch;
   }
   
   .mng-filter-group {
-    display: flex;
-    align-items: center;
+    width: 100%;
   }
   
-  .mng-filter-group label {
-    margin-right: 8px;
-    font-size: 14px;
-    color: #555;
-  }
-  
-  .mng-filter-group input[type="date"],
-  .mng-filter-group select {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    outline: none;
+  .mng-time-range-inputs {
+    flex-direction: column;
+    width: 100%;
   }
   
   .mng-add-reservation-btn {
-    background-color: #3498db;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-  }
-  
-  .mng-add-reservation-btn:hover {
-    background-color: #2980b9;
-  }
-  
-  .mng-reservation-table-container {
-    overflow-x: auto;
-  }
-  
-  .mng-reservation-table {
     width: 100%;
-    border-collapse: collapse;
-    background-color: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
+    justify-content: center;
   }
-  
-  .mng-reservation-table thead {
-    background-color: #f5f7fa;
-  }
-  
-  .mng-reservation-table th {
-    text-align: left;
-    padding: 12px 15px;
-    font-weight: 600;
-    font-size: 14px;
-    color: #444;
-    border-bottom: 2px solid #e0e0e0;
-  }
-  
-  .mng-reservation-table td {
-    padding: 12px 15px;
-    font-size: 14px;
-    border-bottom: 1px solid #e0e0e0;
-  }
-  
-  .mng-reservation-row {
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  .mng-reservation-row:hover {
-    background-color: #f0f7ff;
-  }
-  
-  .mng-status-badge {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-    text-transform: capitalize;
-  }
-  
-  .mng-status-confirmed {
-    background-color: #e6f7ee;
-    color: #2ecc71;
-  }
-  
-  .mng-status-pending {
-    background-color: #fff7e6;
-    color: #f1c40f;
-  }
-  
-  .mng-status-cancelled {
-    background-color: #ffe6e6;
-    color: #e74c3c;
-  }
-  
-  .mng-status-completed {
-    background-color: #e0e0e0;
-    color: #7f8c8d;
-  }
-  
-  .mng-action-buttons {
-    display: flex;
-    gap: 8px;
-  }
-  
-  .mng-action-btn {
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-  }
-  
-  .mng-edit-btn {
-    background-color: #3498db;
-    color: white;
-  }
-  
-  .mng-edit-btn:hover {
-    background-color: #2980b9;
-  }
-  
-  .mng-cancel-btn {
-    background-color: #e74c3c;
-    color: white;
-  }
-  
-  .mng-cancel-btn:hover {
-    background-color: #c0392b;
-  }
-  
-  .mng-no-reservations {
-    text-align: center;
-    padding: 30px;
-    color: #777;
-    font-style: italic;
-  }
+}
