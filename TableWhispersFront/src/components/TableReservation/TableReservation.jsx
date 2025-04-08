@@ -60,7 +60,7 @@ const TableReservation = ({
     const fetchRestaurantData = async () => {
       try {
         setLoadingTimes(true);
-        const response = await fetch(`http://localhost:7000/restaurant/${restaurantId}`);
+        const response = await fetch(`http://localhost:5000/restaurant/${restaurantId}`);
         const data = await response.json();
         setRestaurantData(data);
 
@@ -224,7 +224,7 @@ const TableReservation = ({
       
       try {
         const time12h = convertTo12Hour(selectedTime);
-        const response = await fetch(`http://localhost:7000/restaurant/${restaurantId}/tables?date=${selectedDate}&time=${time12h}&guests=${selectedPeople}`);
+        const response = await fetch(`http://localhost:5000/restaurant/${restaurantId}/tables?date=${selectedDate}&time=${time12h}&guests=${selectedPeople}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch available tables');
@@ -341,7 +341,7 @@ const TableReservation = ({
           };
         }
         
-        const response = await fetch(`http://localhost:7000/create_Reservation/restaurant/${restaurantId}`, {
+        const response = await fetch(`http://localhost:5000/create_Reservation/restaurant/${restaurantId}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -79,28 +79,78 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
     return `http://localhost:5000${imagePath}`;
 };
 
-  const handleSubmitEdit = async (e) => {
-    e.preventDefault();
+const handleSubmitEdit = async (e) => {
+  e.preventDefault();
+  
+  if (!editFormData.date || !editFormData.time || !editFormData.guests) {
+    setFormError('Date, time and guests are required fields');
+    return;
+  }
+  
+  setIsSubmitting(true);
+  setFormError('');
+  
+  try {
+    const startTime = new Date(`${editFormData.date}T${editFormData.time}`);
     
-    if (!editFormData.date || !editFormData.time || !editFormData.guests) {
-      setFormError('Date, time and guests are required fields');
+    const endTime = new Date(startTime);
+    endTime.setHours(endTime.getHours() + 2);
+    
+    const startTimeISO = startTime.toISOString();
+    const endTimeISO = endTime.toISOString();
+    
+    const apiUrl = 'http://localhost:5000';
+    const response = await fetch(`${apiUrl}/update_Reservation_Details/restaurant`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('token') || ''
+      },
+      body: JSON.stringify({
+        reservation_id: reservation.id,
+        date: editFormData.date,
+        time: editFormData.time,
+        guests: parseInt(editFormData.guests, 10),
+        tableNumber: editFormData.tableNumber || null,
+        notify_all: true, // Add this flag to notify all connected clients
+        client_email: reservation.customer?.email || '', // Add client email for notifications
+        restaurant_id: reservation.restaurantId || reservation.restaurant_id || ''
+      }),
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      setFormError(data.message || 'Failed to update reservation');
       return;
     }
     
-    setIsSubmitting(true);
-    setFormError('');
+    // This will notify the parent component (likely ManagementReservationList)
+    if (onUpdateStatus) {
+      onUpdateStatus('update', {
+        id: reservation.id,
+        orderDetails: {
+          ...orderDetails,
+          startTime: startTimeISO,
+          endTime: endTimeISO,
+          guests: parseInt(editFormData.guests, 10),
+          tableNumber: editFormData.tableNumber || null
+        }
+      });
+    }
     
+    setIsEditing(false);
+  } catch (error) {
+    console.error('Error updating reservation:', error);
+    setFormError('An error occurred while updating the reservation');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+const handleCancelReservation = async () => {
+  if (window.confirm('Are you sure you want to cancel this reservation?')) {
     try {
-      const startTime = new Date(`${editFormData.date}T${editFormData.time}`);
-      
-      const endTime = new Date(startTime);
-      endTime.setHours(endTime.getHours() + 2);
-      
-      const startTimeISO = startTime.toISOString();
-      const endTimeISO = endTime.toISOString();
-      
-      const apiUrl = 'http://localhost:7000';
-      const response = await fetch(`${apiUrl}/update_Reservation_Details/restaurant`, {
+      const response = await fetch(`http://localhost:5000/update_Reservation/restaurant/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -108,55 +158,29 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
         },
         body: JSON.stringify({
           reservation_id: reservation.id,
-          date: editFormData.date,
-          time: editFormData.time,
-          guests: parseInt(editFormData.guests, 10),
-          tableNumber: editFormData.tableNumber || null
+          status: 'Cancelled',
+          notify_all: true, // Add this flag to notify all connected clients
+          client_email: reservation.customer?.email || '', // Add client email for notifications
+          restaurant_id: reservation.restaurantId || reservation.restaurant_id || ''
         }),
       });
       
       const data = await response.json();
       
       if (!data.success) {
-        setFormError(data.message || 'Failed to update reservation');
-        return;
+        throw new Error(data.message || 'Failed to cancel reservation');
       }
       
       if (onUpdateStatus) {
-        onUpdateStatus('update', {
-          id: reservation.id,
-          orderDetails: {
-            ...orderDetails,
-            startTime: startTimeISO,
-            endTime: endTimeISO,
-            guests: parseInt(editFormData.guests, 10),
-            tableNumber: editFormData.tableNumber || null
-          }
-        });
+        await onUpdateStatus('cancelled');
       }
-      
-      setIsEditing(false);
     } catch (error) {
-      console.error('Error updating reservation:', error);
-      setFormError('An error occurred while updating the reservation');
-    } finally {
-      setIsSubmitting(false);
+      console.error('Error cancelling reservation:', error);
+      alert('Failed to cancel reservation. Please try again.');
     }
-  };
+  }
+};
 
-  const handleCancelReservation = async () => {
-    if (window.confirm('Are you sure you want to cancel this reservation?')) {
-      try {
-        if (onUpdateStatus) {
-          await onUpdateStatus('cancelled');
-        }
-      } catch (error) {
-        console.error('Error cancelling reservation:', error);
-        alert('Failed to cancel reservation. Please try again.');
-      }
-    }
-  };
-  
   const handleToggleHistory = () => {
     setShowHistory(!showHistory);
   };

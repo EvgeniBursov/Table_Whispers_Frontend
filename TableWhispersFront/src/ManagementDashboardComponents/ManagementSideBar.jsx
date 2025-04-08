@@ -10,7 +10,7 @@ const ManagementSideBar = ({ activeView, setActiveView }) => {
     const fetchRestaurantName = async () => {
       try {
 
-        const response = await fetch(`http://localhost:7000/restaurant/${restaurantId}`);
+        const response = await fetch(`http://localhost:5000/restaurant/${restaurantId}`);
         const data = await response.json();
         setRestaurantName(data.res_name)
       } catch (error) {

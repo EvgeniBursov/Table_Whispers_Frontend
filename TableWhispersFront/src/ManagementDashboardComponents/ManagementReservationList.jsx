@@ -5,15 +5,6 @@ import './ManagementDashboardCSS/MngStatusModal.css';
 import MngEmptyState from './ManagementEmptyState';
 import TimeSelector from '../components/TimeSelector/TimeSelector';
 
-// For local development, use localhost with your server port
-const socketUrl = 'http://localhost:7000'; // Use your actual port here
-const apiUrl = 'http://localhost:7000'; // Use your actual port here
-
-// Initialize Socket.IO connection
-const socket = io(socketUrl, {
-  transports: ['websocket', 'polling']
-});
-
 // Helper function to format time in 24-hour format
 const formatTime24h = (dateString) => {
   const date = new Date(dateString);
@@ -21,16 +12,6 @@ const formatTime24h = (dateString) => {
     hour: '2-digit', 
     minute: '2-digit',
     hour12: false  
-  });
-};
-
-// Helper function to format time in 12-hour format with AM/PM
-const formatTime12h = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
   });
 };
 
@@ -42,6 +23,16 @@ const calculateDuration = (startTime, endTime) => {
   return `${duration} min`;
 };
 
+// Format date for display
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+};
+
 const ManagementReservationList = ({ 
   reservations, 
   dateFilter, 
@@ -50,189 +41,36 @@ const ManagementReservationList = ({
   setStatusFilter,
   onSelectReservation,
   onAddReservation,
-  setReservations  // Prop to update the parent's state
+  setReservations,
+  restaurantId,
+  socketConnected,
+  notifications = [],
+  onClearNotifications = () => {}
 }) => {
   const [filteredReservations, setFilteredReservations] = useState([]);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
-  const [socketConnected, setSocketConnected] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [hasNewNotification, setHasNewNotification] = useState(false);
+  const [isLoadingUpdate, setIsLoadingUpdate] = useState(false);
   
-  // Time filter state 
+  // Time filter state
   const [startTimeFilter, setStartTimeFilter] = useState('');
   const [endTimeFilter, setEndTimeFilter] = useState('');
 
-  // Load reservations with table numbers
+  // Watch for new notifications and show indicator
   useEffect(() => {
-    const loadReservationsWithTableNumbers = async () => {
-      try {
-        // If we already have reservations but need to fetch table numbers
-        if (Array.isArray(reservations) && reservations.length > 0) {
-          // Make a call to get table assignments
-          const response = await fetch(`${apiUrl}/get_table_assignments`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': localStorage.getItem('token') || ''
-            }
-          });
-          
-          if (response.ok) {
-            const tableData = await response.json();
-            
-            // Update reservations with table data
-            const updatedReservations = reservations.map(res => {
-              // Find table assignment for this reservation
-              const tableAssignment = tableData.find(t => t.reservation_id === res.id);
-              
-              if (tableAssignment) {
-                return {
-                  ...res,
-                  tableNumber: tableAssignment.table_number,
-                  orderDetails: {
-                    ...res.orderDetails,
-                    tableNumber: tableAssignment.table_number
-                  }
-                };
-              }
-              return res;
-            });
-            
-            // Update parent state
-            if (setReservations) {
-              setReservations(updatedReservations);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error loading table assignments:', error);
-      }
-    };
-    
-    loadReservationsWithTableNumbers();
-  }, [reservations, setReservations]);
-
-  // Set up WebSocket listeners
-  useEffect(() => {
-    // Track connection status
-    socket.on('connect', () => {
-      console.log('WebSocket connected!');
-      setSocketConnected(true);
-    });
-
-    socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
-      setSocketConnected(false);
-    });
-
-    // Listen for reservation updates
-    socket.on('reservationUpdated', (data) => {
-      console.log('Received reservation update:', data);
+    if (notifications.length > 0) {
+      setHasNewNotification(true);
       
-      // Update the reservations in parent component if setReservations is provided
-      if (setReservations) {
-        setReservations(prevReservations => 
-          prevReservations.map(res => {
-            if (res.id === data.reservationId) {
-              // Preserve tableNumber during updates
-              return {
-                ...res,
-                orderDetails: {
-                  ...res.orderDetails,
-                  status: data.newStatus,
-                  tableNumber: res.orderDetails.tableNumber || null
-                }
-              };
-            }
-            return res;
-          })
-        );
-      }
-
-      // Update filtered reservations directly
-      setFilteredReservations(prevReservations => 
-        prevReservations.map(res => {
-          if (res.id === data.reservationId) {
-            // Preserve tableNumber during updates
-            return {
-              ...res,
-              orderDetails: {
-                ...res.orderDetails,
-                status: data.newStatus,
-                tableNumber: res.orderDetails.tableNumber || null
-              }
-            };
-          }
-          return res;
-        })
-      );
-    });
-
-    socket.on('reservationCreated', (data) => {
-      console.log('Received new reservation:', data);
+      // Auto-hide indicator after 5 seconds
+      const timer = setTimeout(() => {
+        setHasNewNotification(false);
+      }, 5000);
       
-      // Add the new reservation to the parent component's state if setReservations is provided
-      if (setReservations) {
-        setReservations(prevReservations => [data.newReservation, ...prevReservations]);
-      }
-      
-      // Check if the new reservation should be included in the filtered list
-      const shouldAdd = shouldIncludeInFiltered(data.newReservation);
-      
-      if (shouldAdd) {
-        setFilteredReservations(prevReservations => [data.newReservation, ...prevReservations]);
-      }
-    });
-
-    // Listen for table assignments
-    socket.on('tableAssigned', (data) => {
-      console.log('Table assigned:', data);
-      
-      // Update reservations with new table assignment
-      if (setReservations) {
-        setReservations(prevReservations => 
-          prevReservations.map(res => {
-            if (res.id === data.reservationId) {
-              return {
-                ...res,
-                tableNumber: data.tableNumber,
-                orderDetails: {
-                  ...res.orderDetails,
-                  tableNumber: data.tableNumber
-                }
-              };
-            }
-            return res;
-          })
-        );
-      }
-      
-      // Update filtered reservations
-      setFilteredReservations(prevReservations => 
-        prevReservations.map(res => {
-          if (res.id === data.reservationId) {
-            return {
-              ...res,
-              tableNumber: data.tableNumber,
-              orderDetails: {
-                ...res.orderDetails,
-                tableNumber: data.tableNumber
-              }
-            };
-          }
-          return res;
-        })
-      );
-    });
-
-    // Cleanup function
-    return () => {
-      socket.off('connect');
-      socket.off('disconnect');
-      socket.off('reservationUpdated');
-      socket.off('reservationCreated');
-      socket.off('tableAssigned');
-    };
-  }, [setReservations, dateFilter, statusFilter, startTimeFilter, endTimeFilter]);
+      return () => clearTimeout(timer);
+    }
+  }, [notifications.length]);
 
   // Filter reservations based on date, time, and status
   useEffect(() => {
@@ -251,9 +89,6 @@ const ManagementReservationList = ({
         const resDate = new Date(res.orderDetails.startTime);
         return resDate.toISOString().split('T')[0] === dateFilter;
       });
-      console.log(`After date filter: ${filtered.length} reservations`);
-    } else {
-      console.log("No date filter applied - showing all dates");
     }
     
     // Apply time range filter - now using hours only from the custom TimeSelector
@@ -267,7 +102,6 @@ const ManagementReservationList = ({
         
         return resTime.getHours() >= startHourInt;
       });
-      console.log(`After start time filter: ${filtered.length} reservations`);
     }
     
     if (endTimeFilter) {
@@ -280,7 +114,6 @@ const ManagementReservationList = ({
         
         return resTime.getHours() <= endHourInt;
       });
-      console.log(`After end time filter: ${filtered.length} reservations`);
     }
     
     // Apply status filter
@@ -288,7 +121,6 @@ const ManagementReservationList = ({
       filtered = filtered.filter(res => 
         res.orderDetails?.status.toLowerCase() === statusFilter.toLowerCase()
       );
-      console.log(`After status filter: ${filtered.length} reservations`);
     }
     
     // Sort reservations by earliest time first
@@ -311,50 +143,19 @@ const ManagementReservationList = ({
     }
   };
 
-  const shouldIncludeInFiltered = (reservation) => {
-    // Check date filter
-    if (dateFilter && dateFilter.trim() !== '') {
-      const resDate = new Date(reservation.orderDetails.startTime);
-      const resDateStr = resDate.toISOString().split('T')[0];
-      if (resDateStr !== dateFilter) {
-        return false;
-      }
-    }
-    
-    // Check time filters
-    if (startTimeFilter) {
-      const resTime = new Date(reservation.orderDetails.startTime);
-      const [startHour] = startTimeFilter.split(':');
-      const startHourInt = parseInt(startHour, 10);
-      
-      if (resTime.getHours() < startHourInt) {
-        return false;
-      }
-    }
-    
-    if (endTimeFilter) {
-      const resTime = new Date(reservation.orderDetails.startTime);
-      const [endHour] = endTimeFilter.split(':');
-      const endHourInt = parseInt(endHour, 10);
-      
-      if (resTime.getHours() > endHourInt) {
-        return false;
-      }
-    }
-    
-    // Check status filter
-    if (statusFilter !== 'all' && 
-        reservation.orderDetails.status.toLowerCase() !== statusFilter.toLowerCase()) {
-      return false;
-    }
-    
-    return true;
-  };
-
   // Function to update reservation status
   const updateReservationStatus = async (reservationId, newStatus) => {
+    setIsLoadingUpdate(true);
+    
     try {
-      const response = await fetch(`${apiUrl}/update_Reservation/restaurant/`, {
+      // Get customer information from the selected reservation
+      const reservation = reservations.find(res => res.id === reservationId);
+      const customerEmail = reservation?.customer?.email;
+      const customerName = reservation?.customer?.firstName 
+                         ? `${reservation.customer.firstName} ${reservation.customer.lastName || ''}`
+                         : 'Customer';
+      
+      const response = await fetch(`http://localhost:5000/update_Reservation/restaurant/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -362,7 +163,11 @@ const ManagementReservationList = ({
         },
         body: JSON.stringify({
           reservation_id: reservationId,
-          status: newStatus
+          status: newStatus,
+          notify_all: true,
+          restaurant_id: restaurantId,
+          client_email: customerEmail,
+          client_name: customerName
         }),
       });
       
@@ -370,12 +175,16 @@ const ManagementReservationList = ({
       
       if (!data.success) {
         alert(`Failed to update status: ${data.message}`);
+      } else {
+        // Close modal
+        setShowStatusModal(false);
+        setSelectedReservation(null);
       }
-      
-      // No need to manually update state or reload - WebSocket will handle it
     } catch (error) {
       console.error('Error updating reservation status:', error);
       alert('Failed to update reservation status. Please try again.');
+    } finally {
+      setIsLoadingUpdate(false);
     }
   };
 
@@ -433,38 +242,174 @@ const ManagementReservationList = ({
           <div className="mng-status-buttons">
             <button 
               className="mng-status-btn mng-status-planning"
-              onClick={() => {
-                updateReservationStatus(selectedReservation.id, 'Planning');
-                setShowStatusModal(false);
-              }}
+              onClick={() => updateReservationStatus(selectedReservation.id, 'Planning')}
+              disabled={isLoadingUpdate}
             >
               Planning
             </button>
             <button 
               className="mng-status-btn mng-status-seated"
-              onClick={() => {
-                updateReservationStatus(selectedReservation.id, 'Seated');
-                setShowStatusModal(false);
-              }}
+              onClick={() => updateReservationStatus(selectedReservation.id, 'Seated')}
+              disabled={isLoadingUpdate}
             >
               Seated
             </button>
             <button 
               className="mng-status-btn mng-status-done"
-              onClick={() => {
-                updateReservationStatus(selectedReservation.id, 'Done');
-                setShowStatusModal(false);
-              }}
+              onClick={() => updateReservationStatus(selectedReservation.id, 'Done')}
+              disabled={isLoadingUpdate}
             >
-              Done
+              Completed
+            </button>
+            <button 
+              className="mng-status-btn mng-status-cancelled"
+              onClick={() => updateReservationStatus(selectedReservation.id, 'Cancelled')}
+              disabled={isLoadingUpdate}
+            >
+              Cancelled
             </button>
           </div>
           <button 
             className="mng-modal-close"
             onClick={() => setShowStatusModal(false)}
+            disabled={isLoadingUpdate}
           >
             Cancel
           </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Notifications Dropdown Component
+  const NotificationsDropdown = () => {
+    if (!showNotifications || notifications.length === 0) return null;
+    
+    // Group notifications by type
+    const groupedNotifications = {
+      update: notifications.filter(n => n.type === 'update'),
+      status: notifications.filter(n => n.type === 'status'),
+      new: notifications.filter(n => n.type === 'new'),
+      cancellation: notifications.filter(n => n.type === 'cancellation'),
+      change: notifications.filter(n => n.type === 'change'),
+      table: notifications.filter(n => n.type === 'table'),
+      error: notifications.filter(n => n.type === 'error')
+    };
+    
+    return (
+      <div className="mng-notifications-dropdown">
+        <div className="mng-notifications-header">
+          <h3>Notifications</h3>
+          <button className="mng-clear-all-button" onClick={onClearNotifications}>
+            Clear All
+          </button>
+        </div>
+        
+        <div className="mng-notifications-content">
+          {/* Status changes */}
+          {groupedNotifications.status.length > 0 && (
+            <div className="mng-notification-group">
+              <h4>Status Updates</h4>
+              {groupedNotifications.status.map(notification => (
+                <div key={notification.id} className="mng-notification-item status">
+                  <div className="mng-notification-message">{notification.message}</div>
+                  <div className="mng-notification-time">
+                    {new Date(notification.timestamp).toLocaleTimeString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* New reservations */}
+          {groupedNotifications.new.length > 0 && (
+            <div className="mng-notification-group">
+              <h4>New Reservations</h4>
+              {groupedNotifications.new.map(notification => (
+                <div key={notification.id} className="mng-notification-item new">
+                  <div className="mng-notification-message">{notification.message}</div>
+                  <div className="mng-notification-time">
+                    {new Date(notification.timestamp).toLocaleTimeString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Cancellations */}
+          {groupedNotifications.cancellation.length > 0 && (
+            <div className="mng-notification-group">
+              <h4>Cancellations</h4>
+              {groupedNotifications.cancellation.map(notification => (
+                <div key={notification.id} className="mng-notification-item cancellation">
+                  <div className="mng-notification-message">{notification.message}</div>
+                  <div className="mng-notification-time">
+                    {new Date(notification.timestamp).toLocaleTimeString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Detail changes */}
+          {groupedNotifications.change.length > 0 && (
+            <div className="mng-notification-group">
+              <h4>Detail Changes</h4>
+              {groupedNotifications.change.map(notification => (
+                <div key={notification.id} className="mng-notification-item change">
+                  <div className="mng-notification-message">{notification.message}</div>
+                  <div className="mng-notification-time">
+                    {new Date(notification.timestamp).toLocaleTimeString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Table assignments */}
+          {groupedNotifications.table.length > 0 && (
+            <div className="mng-notification-group">
+              <h4>Table Assignments</h4>
+              {groupedNotifications.table.map(notification => (
+                <div key={notification.id} className="mng-notification-item table">
+                  <div className="mng-notification-message">{notification.message}</div>
+                  <div className="mng-notification-time">
+                    {new Date(notification.timestamp).toLocaleTimeString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Other updates */}
+          {groupedNotifications.update.length > 0 && (
+            <div className="mng-notification-group">
+              <h4>Other Updates</h4>
+              {groupedNotifications.update.map(notification => (
+                <div key={notification.id} className="mng-notification-item update">
+                  <div className="mng-notification-message">{notification.message}</div>
+                  <div className="mng-notification-time">
+                    {new Date(notification.timestamp).toLocaleTimeString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Errors */}
+          {groupedNotifications.error.length > 0 && (
+            <div className="mng-notification-group">
+              <h4>Errors</h4>
+              {groupedNotifications.error.map(notification => (
+                <div key={notification.id} className="mng-notification-item error">
+                  <div className="mng-notification-message">{notification.message}</div>
+                  <div className="mng-notification-time">
+                    {new Date(notification.timestamp).toLocaleTimeString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -488,11 +433,13 @@ const ManagementReservationList = ({
       <div className="mng-reservation-header">
         <div className="mng-header-top">
           <h2>Reservations</h2>
-          {socketConnected && (
-            <div className="mng-realtime-badge">
-              Realtime Updates Active
+          <div className="mng-header-actions">
+            {/* Socket connection status */}
+            <div className={`mng-realtime-status ${socketConnected ? 'connected' : 'disconnected'}`}>
+              <span className="mng-status-indicator"></span>
+              {socketConnected ? 'Real-time Updates Active' : 'Offline Mode'}
             </div>
-          )}
+          </div>
         </div>
         <div className="mng-reservation-filters">
           <div className="mng-filter-group">
@@ -567,6 +514,7 @@ const ManagementReservationList = ({
             <thead>
               <tr>
                 <th>Time</th>
+                <th>Date</th>
                 <th>Customer</th>
                 <th>Guests</th>
                 <th>Table</th> 
@@ -580,9 +528,10 @@ const ManagementReservationList = ({
                 <tr 
                   key={reservation.id}
                   onClick={() => onSelectReservation(reservation)}
-                  className="mng-reservation-row"
+                  className={`mng-reservation-row ${reservation.orderDetails.status.toLowerCase() === 'cancelled' ? 'mng-reservation-cancelled' : ''}`}
                 >
                   <td className="mng-time-column">{formatTime24h(reservation.orderDetails.startTime)}</td>
+                  <td>{formatDate(reservation.orderDetails.startTime)}</td>
                   <td>
                     {reservation.customer ? (
                       <div>
@@ -612,15 +561,18 @@ const ManagementReservationList = ({
                     <button 
                       className="mng-action-btn mng-edit-btn" 
                       onClick={(e) => handleEditStatus(e, reservation)}
+                      disabled={reservation.orderDetails.status.toLowerCase() === 'cancelled'}
                     >
                       Edit
                     </button>
-                    <button 
-                      className="mng-action-btn mng-cancel-btn"
-                      onClick={(e) => handleCancelReservation(e, reservation)}
-                    >
-                      Cancel
-                    </button>
+                    {reservation.orderDetails.status.toLowerCase() !== 'cancelled' && (
+                      <button 
+                        className="mng-action-btn mng-cancel-btn"
+                        onClick={(e) => handleCancelReservation(e, reservation)}
+                      >
+                        Cancel
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

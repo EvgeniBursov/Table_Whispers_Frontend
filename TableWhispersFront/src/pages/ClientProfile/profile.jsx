@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { assets } from "../../assets/assets";
+import { io } from 'socket.io-client';
 import "./profile.css";
+
+// Initialize Socket.io connection
+const socketUrl = 'http://localhost:5000';
 
 const ClientProfile = () => {
   const [profile, setProfile] = useState(null);
-  const [allergies, setAllergies] = useState([]); // Store allergies list
-  const [selectedAllergy, setSelectedAllergy] = useState(""); // Selected allergy
+  const [allergies, setAllergies] = useState([]);
+  const [selectedAllergy, setSelectedAllergy] = useState("");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Planning");
   const [password, setPassword] = useState("");
@@ -17,34 +21,298 @@ const ClientProfile = () => {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [socket, setSocket] = useState(null);
+  
+  // State variables for reservation editing
+  const [editingReservation, setEditingReservation] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    date: '',
+    time: '',
+    guests: ''
+  });
+  const [editFormError, setEditFormError] = useState('');
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
   const email = localStorage.getItem("userEmail");
 
+  // Initialize socket connection
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(
-          `http://localhost:5000/userProfile?email=${email}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (!response.ok) throw new Error("Failed to fetch profile");
-        const data = await response.json();
-        console.log(data)
-        setProfile(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
+    // Create socket instance
+    const newSocket = io(socketUrl, {
+      transports: ['websocket', 'polling']
+    });
+    
+    setSocket(newSocket);
+    
+    // Socket connection handlers
+    newSocket.on('connect', () => {
+      console.log('WebSocket connected!');
+      setSocketConnected(true);
+      
+      // Join customer-specific room for targeted updates
+      if (email) {
+        newSocket.emit('joinCustomerRoom', { customerEmail: email });
+        console.log(`Joined customer room: customer_${email}`);
+      }
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('WebSocket disconnected');
+      setSocketConnected(false);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      if (newSocket) {
+        newSocket.disconnect();
       }
     };
+  }, [email]);
 
+  // Set up WebSocket listeners once socket and profile are available
+  useEffect(() => {
+    if (!socket || !profile) return;
+
+    // Listen for reservation updates
+    socket.on('reservationUpdated', (data) => {
+      console.log('Received reservation update:', data);
+      
+      // Add notification
+      addNotification({
+        type: 'update',
+        message: `Reservation #${data.reservationId.slice(-6)} was updated`,
+        timestamp: new Date(data.timestamp || Date.now())
+      });
+      
+      // Refresh profile to get updated reservation data
+      fetchProfile();
+    });
+
+    // Listen for specific reservation status changes
+    socket.on('reservationStatusChanged', (data) => {
+      console.log('Reservation status changed:', data);
+      
+      // Skip if not relevant to this customer
+      if (data.customerEmail && data.customerEmail !== email) return;
+      
+      // Add notification
+      addNotification({
+        type: 'status',
+        message: `Your reservation at ${data.restaurantName || 'restaurant'} status changed to ${data.newStatus}`,
+        timestamp: new Date(data.timestamp || Date.now())
+      });
+      
+      // Update the order status in the profile
+      updateReservationInProfile(data.reservationId, {
+        status: data.newStatus
+      });
+      
+      // If status changed to "Cancelled", refresh entire profile
+      if (data.newStatus.toLowerCase() === 'cancelled') {
+        fetchProfile();
+      }
+    });
+
+    // Listen for detailed reservation changes
+    socket.on('reservationDetailsChanged', (data) => {
+      console.log('Reservation details changed:', data);
+      
+      // Skip if not relevant to this customer
+      if (data.customerEmail && data.customerEmail !== email) return;
+      
+      // Create a meaningful notification message
+      let message = `Your reservation at ${data.restaurantName || 'restaurant'} was updated`;
+      
+      if (data.updates) {
+        const changes = [];
+        
+        if (data.updates.dateChanged) changes.push('date');
+        if (data.updates.timeChanged) changes.push('time');
+        if (data.updates.guestsChanged) changes.push('number of guests');
+        if (data.updates.tableChanged) changes.push('table number');
+        
+        if (changes.length > 0) {
+          message = `Your reservation ${changes.join(', ')} was updated by the restaurant`;
+        }
+      }
+      
+      // Add notification
+      addNotification({
+        type: 'change',
+        message,
+        timestamp: new Date(data.timestamp || Date.now()),
+        details: data
+      });
+      
+      // Update the specific reservation in state
+      if (data.reservationId && data.updates) {
+        const updates = {};
+        
+        // Build updates object
+        if (data.updates.dateChanged || data.updates.timeChanged) {
+          // Need to update orderDate and possibly time fields
+          fetchProfile(); // Refresh all data for now
+          return;
+        }
+        
+        if (data.updates.guestsChanged) {
+          updates.guests = data.updates.newGuests;
+        }
+        
+        if (data.updates.tableChanged) {
+          updates.tableNumber = data.updates.newTableNumber;
+        }
+        
+        // Apply updates
+        updateReservationInProfile(data.reservationId, updates);
+      }
+    });
+
+    // Listen for table assignments
+    socket.on('tableAssigned', (data) => {
+      console.log('Table assigned:', data);
+      
+      // Skip if not relevant to this customer
+      if (data.customerEmail && data.customerEmail !== email) return;
+      
+      // Add notification
+      addNotification({
+        type: 'table',
+        message: `Table ${data.tableNumber} assigned to your reservation`,
+        timestamp: new Date()
+      });
+      
+      // Update the reservation in profile
+      updateReservationInProfile(data.reservationId, {
+        tableNumber: data.tableNumber
+      });
+    });
+
+    // Cleanup listeners on unmount or when dependencies change
+    return () => {
+      socket.off('reservationUpdated');
+      socket.off('reservationStatusChanged');
+      socket.off('reservationDetailsChanged');
+      socket.off('tableAssigned');
+    };
+  }, [socket, profile, email]);
+
+  // Add a notification to the state
+  const addNotification = (notification) => {
+    setNotifications(prev => [{
+      id: Date.now(),
+      ...notification
+    }, ...prev]);
+    
+    // Play notification sound
+    playNotificationSound();
+    
+    // Show toast notification
+    showNotificationToast(notification.message);
+  };
+
+  // Play notification sound
+  const playNotificationSound = () => {
+    try {
+      const audio = new Audio('/notification-sound.mp3');
+      audio.play();
+    } catch (error) {
+      console.error('Error playing notification sound:', error);
+    }
+  };
+
+  // Display toast notification
+  const showNotificationToast = (message) => {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = 'notification-toast';
+    toast.innerHTML = `
+      <div class="notification-icon">🔔</div>
+      <div class="notification-content">${message}</div>
+      <button class="notification-close">×</button>
+    `;
+    
+    // Add to document
+    document.body.appendChild(toast);
+    
+    // Add close functionality
+    const closeBtn = toast.querySelector('.notification-close');
+    closeBtn.addEventListener('click', () => {
+      toast.classList.add('notification-toast-hiding');
+      setTimeout(() => {
+        document.body.removeChild(toast);
+      }, 300);
+    });
+    
+    // Auto-remove after 7 seconds
+    setTimeout(() => {
+      if (document.body.contains(toast)) {
+        toast.classList.add('notification-toast-hiding');
+        setTimeout(() => {
+          if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+          }
+        }, 300);
+      }
+    }, 7000);
+    
+    // Animate in
+    setTimeout(() => {
+      toast.classList.add('notification-toast-visible');
+    }, 10);
+  };
+
+  // Update a specific reservation in the profile state
+  const updateReservationInProfile = (reservationId, updates) => {
+    if (!profile || !profile.orders) return;
+    
+    setProfile(prevProfile => {
+      // Create a new orders array with the updated reservation
+      const updatedOrders = prevProfile.orders.map(order => {
+        if (order.order_id === reservationId) {
+          return {
+            ...order,
+            ...updates
+          };
+        }
+        return order;
+      });
+      
+      // Return updated profile
+      return {
+        ...prevProfile,
+        orders: updatedOrders
+      };
+    });
+  };
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:5000/userProfile?email=${email}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error("Failed to fetch profile");
+      const data = await response.json();
+      console.log(data);
+      setProfile(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     const fetchAllergies = async () => {
       try {
         const response = await fetch("http://localhost:5000/getListOfAllergies");
@@ -61,8 +329,6 @@ const ClientProfile = () => {
     fetchAllergies();
     
   }, [email]);
-
-
 
   // Helper function for normalized string comparison
   const normalizedCompare = (a, b) => {
@@ -111,6 +377,163 @@ const ClientProfile = () => {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setCurrentPage(1); // Reset to first page when changing tabs
+    setEditingReservation(null); // Cancel any ongoing edits when changing tabs
+  };
+
+  // Function to start editing a specific reservation
+  const startReservationEdit = (order) => {
+    if (order.orderDate) {
+      const startDate = new Date(order.orderDate);
+      
+      // Format date for input field (YYYY-MM-DD)
+      const formattedDate = startDate.toISOString().split('T')[0];
+      
+      // Format time for input field (HH:MM)
+      let formattedTime = '';
+      if (order.orderStart) {
+        formattedTime = order.orderStart;
+      } else {
+        // Default to current time if no start time is available
+        const now = new Date();
+        formattedTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      }
+      
+      setEditFormData({
+        date: formattedDate,
+        time: formattedTime,
+        guests: order.guests || 2
+      });
+    }
+    
+    setEditingReservation(order);
+    setEditFormError('');
+  };
+
+  // Function to cancel editing
+  const cancelReservationEdit = () => {
+    setEditingReservation(null);
+    setEditFormError('');
+  };
+
+  // Handle input changes in the edit form
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData({
+      ...editFormData,
+      [name]: value
+    });
+  };
+
+  // Submit the edit form to update reservation details
+  const handleSubmitReservationEdit = async () => {
+    if (!editingReservation) return;
+    
+    if (!editFormData.date || !editFormData.time || !editFormData.guests) {
+      setEditFormError('Date, time and guests are required fields');
+      return;
+    }
+    
+    setIsSubmittingEdit(true);
+    setEditFormError('');
+    
+    try {
+      const startTime = new Date(`${editFormData.date}T${editFormData.time}`);
+      
+      // Set end time to 2 hours after start time
+      const endTime = new Date(startTime);
+      endTime.setHours(endTime.getHours() + 2);
+      
+      // Convert to ISO string format
+      const startTimeISO = startTime.toISOString();
+      const endTimeISO = endTime.toISOString();
+      
+      // Format time for display (HH:MM)
+      const formattedStartTime = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}`;
+      const formattedEndTime = `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
+      
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:5000/update_Reservation_Details/restaurant`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          reservation_id: editingReservation.order_id,
+          date: editFormData.date,
+          time: editFormData.time,
+          guests: parseInt(editFormData.guests, 10),
+          restaurant_id: editingReservation.restaurant_id || editingReservation.restaurantId,
+          client_email: email,
+          client_name: `${profile.first_name} ${profile.last_name}`,
+          notify_all: true // Notify all connected clients
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        setEditFormError(data.message || 'Failed to update reservation');
+        return;
+      }
+      
+      // Emit socket event to notify all clients
+      if (socket) {
+        socket.emit('clientUpdatedReservation', {
+          reservationId: editingReservation.order_id,
+          restaurantId: editingReservation.restaurant_id || editingReservation.restaurantId,
+          clientEmail: email,
+          clientName: `${profile.first_name} ${profile.last_name}`,
+          updatedDetails: {
+            date: editFormData.date,
+            time: editFormData.time,
+            guests: parseInt(editFormData.guests, 10),
+            startTime: startTimeISO,
+            endTime: endTimeISO
+          }
+        });
+      }
+      
+      // Add a notification
+      addNotification({
+        type: 'update',
+        message: `Your reservation at ${editingReservation.restaurantName} was updated successfully`,
+        timestamp: new Date()
+      });
+      
+      // Update the reservation in the local state
+      const updatedOrders = profile.orders.map(order => {
+        if (order.order_id === editingReservation.order_id) {
+          return {
+            ...order,
+            orderDate: startTimeISO,
+            orderStart: formattedStartTime,
+            orderEnd: formattedEndTime,
+            guests: parseInt(editFormData.guests, 10)
+          };
+        }
+        return order;
+      });
+      
+      setProfile({
+        ...profile,
+        orders: updatedOrders
+      });
+      
+      setEditingReservation(null);
+    } catch (error) {
+      console.error('Error updating reservation:', error);
+      setEditFormError('An error occurred while updating the reservation');
+      
+      // Add error notification
+      addNotification({
+        type: 'error',
+        message: `Failed to update reservation: ${error.message}`,
+        timestamp: new Date()
+      });
+    } finally {
+      setIsSubmittingEdit(false);
+    }
   };
 
   // Handle phone number edit
@@ -168,12 +591,97 @@ const ClientProfile = () => {
       
       setEditingPhone(false);
       
-      alert(data?.message || "Phone number updated successfully!");
+      // Add notification
+      addNotification({
+        type: 'update',
+        message: 'Phone number updated successfully',
+        timestamp: new Date()
+      });
     } catch (error) {
       console.error("Network error:", error);
       alert("Failed to connect to server. Please check your connection.");
     }
   }
+
+  const handleCancelOrder = async (reservationId) => {
+    const confirmation = window.confirm("Are you sure you want to cancel this reservation?");
+    if (!confirmation) return false;
+    
+    setLoading(true);
+    
+    try {
+      // Get the restaurant ID from the order
+      const order = profile.orders.find(order => order.order_id === reservationId);
+      const restaurantId = order?.restaurant_id || order?.restaurantId;
+      
+      // Call the API to update the reservation status
+      const response = await fetch(`http://localhost:5000/update_Reservation/restaurant/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reservation_id: reservationId,
+          status: "Cancelled",
+          restaurant_id: restaurantId,
+          client_email: email,
+          client_name: `${profile.first_name} ${profile.last_name}`,
+          notify_all: true // Notify all connected clients
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to update reservation status');
+      }
+      
+      // Emit socket event to notify all clients
+      if (socket) {
+        socket.emit('clientCancelledReservation', {
+          reservationId: reservationId,
+          restaurantId: restaurantId,
+          clientEmail: email,
+          clientName: `${profile.first_name} ${profile.last_name}`
+        });
+      }
+      
+      // Update local state to reflect cancellation
+      const updatedOrders = profile.orders.map(order => {
+        if (order.order_id === reservationId) {
+          return { ...order, status: "Cancelled" };
+        }
+        return order;
+      });
+      
+      setProfile({
+        ...profile,
+        orders: updatedOrders
+      });
+      
+      // Add notification
+      addNotification({
+        type: 'cancellation',
+        message: `Reservation at ${order?.restaurantName || 'restaurant'} cancelled successfully`,
+        timestamp: new Date()
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating reservation status:', error);
+      
+      // Add error notification
+      addNotification({
+        type: 'error',
+        message: `Failed to cancel reservation: ${error.message}`,
+        timestamp: new Date()
+      });
+      
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePasswordChange = async () => {
     if (password !== confirm_password) {
@@ -196,7 +704,14 @@ const ClientProfile = () => {
         alert(data.error);
         return;
       } else {
-        alert(data.message)
+        // Add notification
+        addNotification({
+          type: 'update',
+          message: 'Password updated successfully',
+          timestamp: new Date()
+        });
+        
+        alert(data.message);
       }
     } catch (error) {
       console.error(error);
@@ -254,6 +769,20 @@ const ClientProfile = () => {
       
       if (type === "update") {
         setSelectedAllergy("");
+        
+        // Add notification
+        addNotification({
+          type: 'update',
+          message: `Added allergy: ${allergy}`,
+          timestamp: new Date()
+        });
+      } else if (type === "remove") {
+        // Add notification
+        addNotification({
+          type: 'update',
+          message: `Removed allergy: ${allergy}`,
+          timestamp: new Date()
+        });
       }
    
     } catch (error) {
@@ -337,7 +866,12 @@ const ClientProfile = () => {
       setImageFile(null);
       setImagePreview(null);
       
-      alert('Profile image updated successfully!');
+      // Add notification
+      addNotification({
+        type: 'update',
+        message: 'Profile image updated successfully',
+        timestamp: new Date()
+      });
     } catch (error) {
       console.error('Error uploading profile image:', error);
       alert("Failed to connect to server. Please check your connection.");
@@ -351,8 +885,14 @@ const ClientProfile = () => {
     setImagePreview(null);
   };
 
+  // Clear all notifications
+  const clearAllNotifications = () => {
+    setNotifications([]);
+  };
+
   if (loading) return <div className="loading">Loading...</div>;
   if (!profile) return <div className="error">No profile data found</div>;
+  
   const getImageUrl = (imagePath) => {
     if (!imagePath) return assets.person_logo;
     
@@ -365,6 +905,52 @@ const ClientProfile = () => {
 
   return (
     <div className="profile-container">
+      {/* Notification indicator */}
+      {notifications.length > 0 && (
+        <div className="notification-center">
+          <button className="notification-bell" onClick={() => document.getElementById('notification-dropdown').classList.toggle('active')}>
+            🔔 <span className="notification-count">{notifications.length}</span>
+          </button>
+          <div id="notification-dropdown" className="notification-dropdown">
+            <div className="notification-header">
+              <h3>Notifications</h3>
+              <button className="clear-notifications" onClick={clearAllNotifications}>
+                Clear All
+              </button>
+            </div>
+            <div className="notification-list">
+              {notifications.length > 0 ? (
+                notifications.map(notification => (
+                  <div key={notification.id} className={`notification-item notification-${notification.type}`}>
+                    <div className="notification-message">{notification.message}</div>
+                    <div className="notification-time">
+                      {notification.timestamp.toLocaleTimeString()}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="no-notifications">No notifications</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Socket connection indicator */}
+      <div className="socket-indicator">
+        {socketConnected ? (
+          <div className="socket-connected">
+            <span className="socket-status-dot connected"></span>
+            Real-time updates active
+          </div>
+        ) : (
+          <div className="socket-disconnected">
+            <span className="socket-status-dot disconnected"></span>
+            Offline mode
+          </div>
+        )}
+      </div>
+
       {/* Personal Information */}
       <div className="profile-card">
         <div className="profile-header">
@@ -488,8 +1074,6 @@ const ClientProfile = () => {
         </div>
       </div>
 
-
-
       {/* Orders Section with 4 tabs and pagination */}
       <div className="profile-card">
         <h2>Orders</h2>
@@ -524,38 +1108,147 @@ const ClientProfile = () => {
           {getCurrentOrders(activeTab).length > 0 ? (
             getCurrentOrders(activeTab).map((order) => (
               <div key={`${order.restaurantName}-${order._id || Math.random()}`} className="order-card">
-                <div className="order-header">
-                  <h3>{order.restaurantName}</h3>
-                  <span className={`status-tag status-${activeTab.toLowerCase()}`}>
-                    {activeTab === "Planning" ? "Upcoming" : 
-                     activeTab === "Seated" ? "Seated" : 
-                     activeTab === "Done" ? "Completed" : "Cancelled"}
-                  </span>
-                </div>
-                <div className="order-info">
-                  <div className="order-detail">
-                    <span className="detail-label">City</span>
-                    <span className="detail-value">{order.restaurantCity}</span>
+                {/* If this is the order being edited, show edit form */}
+                {editingReservation && editingReservation.order_id === order.order_id ? (
+                  <div className="reservation-edit-form">
+                    <h3>Edit Reservation at {order.restaurantName}</h3>
+                    
+                    {editFormError && <div className="form-error">{editFormError}</div>}
+                    
+                    <div className="form-group">
+                      <label>Date:</label>
+                      <input 
+                        type="date" 
+                        name="date"
+                        value={editFormData.date}
+                        onChange={handleEditInputChange}
+                        min={new Date().toISOString().split("T")[0]}
+                        required
+                        className="edit-form-input"
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Time (24h):</label>
+                      <input 
+                        type="time" 
+                        name="time"
+                        value={editFormData.time}
+                        onChange={handleEditInputChange}
+                        required
+                        className="edit-form-input"
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Number of Guests:</label>
+                      <select 
+                        name="guests"
+                        value={editFormData.guests}
+                        onChange={handleEditInputChange}
+                        required
+                        className="edit-form-input"
+                      >
+                        <option value="1">1 person</option>
+                        <option value="2">2 people</option>
+                        <option value="3">3 people</option>
+                        <option value="4">4 people</option>
+                        <option value="5">5 people</option>
+                        <option value="6">6 people</option>
+                        <option value="8">8 people</option>
+                        <option value="10">10 people</option>
+                      </select>
+                    </div>
+                    
+                    <div className="form-actions">
+                      <button 
+                        onClick={cancelReservationEdit} 
+                        className="edit-cancel-button"
+                        disabled={isSubmittingEdit}
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={handleSubmitReservationEdit} 
+                        className="edit-confirm-button"
+                        disabled={isSubmittingEdit}
+                      >
+                        {isSubmittingEdit ? 'Saving...' : 'Save Changes'}
+                      </button>
+                    </div>
                   </div>
-                  <div className="order-detail">
-                    <span className="detail-label">Description</span>
-                    <span className="detail-value">{order.restaurantDescription}</span>
-                  </div>
-                  <div className="order-detail">
-                    <span className="detail-label">Phone</span>
-                    <span className="detail-value">{order.restaurantPhone}</span>
-                  </div>
-                  <div className="order-detail">
-                    <span className="detail-label">Guests</span>
-                    <span className="detail-value">{order.guests}</span>
-                  </div>
-                  <div className="order-detail">
-                    <span className="detail-label">Order Date</span>
-                    <span className="detail-value">
-                      {new Date(order.orderDate).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="order-header">
+                      <h3>{order.restaurantName}</h3>
+                      <span className={`status-tag status-${activeTab.toLowerCase()}`}>
+                        {activeTab === "Planning" ? "Upcoming" : 
+                        activeTab === "Seated" ? "Seated" : 
+                        activeTab === "Done" ? "Completed" : "Cancelled"}
+                      </span>
+                    </div>
+                    <div className="order-info">
+                      <div className="order-detail">
+                        <span className="detail-label">City</span>
+                        <span className="detail-value">{order.restaurantCity}</span>
+                      </div>
+                      <div className="order-detail">
+                        <span className="detail-label">Description</span>
+                        <span className="detail-value">{order.restaurantDescription}</span>
+                      </div>
+                      <div className="order-detail">
+                        <span className="detail-label">Phone</span>
+                        <span className="detail-value">{order.restaurantPhone}</span>
+                      </div>
+                      <div className="order-detail">
+                        <span className="detail-label">Guests</span>
+                        <span className="detail-value">{order.guests}</span>
+                      </div>
+                      <div className="order-detail">
+                        <span className="detail-label">Order Date</span>
+                        <span className="detail-value">
+                          {new Date(order.orderDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {/* Add start time */}
+                      <div className="order-detail">
+                        <span className="detail-label">Start Time</span>
+                        <span className="detail-value">{order.orderStart || "N/A"}</span>
+                      </div>
+                      {/* Add end time */}
+                      <div className="order-detail">
+                        <span className="detail-label">End Time</span>
+                        <span className="detail-value">{order.orderEnd || "N/A"}</span>
+                      </div>
+                      {/* Add table number if available */}
+                      {order.tableNumber && (
+                        <div className="order-detail">
+                          <span className="detail-label">Table</span>
+                          <span className="detail-value table-number">
+                            {order.tableNumber}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {activeTab === "Planning" && (
+                      <div className="order-actions">
+                        {/* Add Edit button */}
+                        <button 
+                          onClick={() => startReservationEdit(order)} 
+                          className="edit-reservation-button"
+                        >
+                          Edit Reservation
+                        </button>
+                        <button 
+                          onClick={() => handleCancelOrder(order.order_id)} 
+                          className="cancel-order-button"
+                        >
+                          Cancel Order
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             ))
           ) : (
@@ -610,6 +1303,9 @@ const ClientProfile = () => {
           </button>
         </div>
       </div>
+      
+      {/* Toast container for real-time notifications */}
+      <div id="toast-container" className="toast-container"></div>
     </div>
   );
 };

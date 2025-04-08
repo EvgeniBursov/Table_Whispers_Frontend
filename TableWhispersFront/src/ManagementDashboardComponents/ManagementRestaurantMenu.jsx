@@ -32,7 +32,7 @@ const RestaurantMenu = ({ restaurantId }) => {
   const fetchMenu = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:7000/get_Restaurant_Menu/restaurant/${restaurantId}`);
+      const response = await fetch(`http://localhost:5000/get_Restaurant_Menu/restaurant/${restaurantId}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch menu');
@@ -49,7 +49,7 @@ const RestaurantMenu = ({ restaurantId }) => {
 
   const handleMenuAction = async (action, data) => {
     try {
-      const response = await fetch(`http://localhost:7000/update_Restaurant_Menu/restaurant/${restaurantId}`, {
+      const response = await fetch(`http://localhost:5000/update_Restaurant_Menu/restaurant/${restaurantId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -34,7 +34,7 @@ const CustomerReservationHistory = ({ customer, onSelectReservation }) => {
           if (customer.id) params.append('customer_id', customer.id);
           if (customer.email) params.append('email', customer.email);
           
-          const apiUrl = 'http://localhost:7000';
+          const apiUrl = 'http://localhost:5000';
           const response = await fetch(`${apiUrl}/get_Customer_Reservation_History/restaurant/?${params}`, {
             headers: {
               'Authorization': localStorage.getItem('token') || ''

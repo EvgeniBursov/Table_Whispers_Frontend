@@ -191,7 +191,7 @@ const HomePage = () => {
   // Fetch recommended restaurants
   const fetchRecommendedRestaurants = async () => {
     try {
-      const response = await fetch('http://localhost:7000/all_Restaurants_Data');
+      const response = await fetch('http://localhost:5000/all_Restaurants_Data');
       const data = await response.json();
       console.log("🔹 Data from server:", data);
 
@@ -230,7 +230,7 @@ const HomePage = () => {
         try {
           // Use the correct endpoint based on router configuration
           const response = await fetch(
-            `http://localhost:7000/get_Available_Times/reservation/restaurant/${restaurant._id}?date=${selectedDate}&partySize=${selectedPeople}`
+            `http://localhost:5000/get_Available_Times/reservation/restaurant/${restaurant._id}?date=${selectedDate}&partySize=${selectedPeople}`
           );
           
           if (!response.ok) {
@@ -382,7 +382,7 @@ const HomePage = () => {
       // First try to use the search_restaurants endpoint if available
       try {
         const response = await fetch(
-          `http://localhost:7000/search_restaurants?date=${selectedDate}&time=${convertTo12HourFormat(selectedTime)}&partySize=${selectedPeople}`
+          `http://localhost:5000/search_restaurants?date=${selectedDate}&time=${convertTo12HourFormat(selectedTime)}&partySize=${selectedPeople}`
         );
         
         const data = await response.json();
@@ -405,7 +405,7 @@ const HomePage = () => {
       }
       
       // Fallback - fetch all restaurants and filter by availability
-      const response = await fetch('http://localhost:7000/all_Restaurants_Data');
+      const response = await fetch('http://localhost:5000/all_Restaurants_Data');
       const data = await response.json();
       
       if (Array.isArray(data)) {
@@ -572,7 +572,7 @@ const HomePage = () => {
                   onClick={(e) => handleRestaurantClick(e, restaurant._id)}
                 >
                   <img 
-                    src={`http://localhost:7000/${restaurant.mainImage}`} 
+                    src={`http://localhost:5000/${restaurant.mainImage}`} 
                     alt={restaurant.res_name} 
                     className="restaurant-image"
                   />

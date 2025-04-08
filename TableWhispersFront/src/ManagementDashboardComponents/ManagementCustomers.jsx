@@ -18,7 +18,7 @@ const ManagementCustomers = () => {
       try {
         setLoading(true);
         
-        const apiUrl = 'http://localhost:7000';
+        const apiUrl = 'http://localhost:5000';
         const response = await fetch(`${apiUrl}/get_Restaurant_Clients/restaurant/${restaurantId}`, {
           headers: {
             'Authorization': localStorage.getItem('token') || ''

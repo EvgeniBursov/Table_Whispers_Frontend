@@ -34,7 +34,7 @@ const RestaurantPage = () => {
     useEffect(() => {
       const fetchRestaurantData = async () => {
         try {
-          const response = await fetch(`http://localhost:7000/restaurant/${id}`);
+          const response = await fetch(`http://localhost:5000/restaurant/${id}`);
           const data = await response.json();
           console.log("Restaurant data:", data);
           setRestaurant(data);
@@ -53,7 +53,7 @@ const RestaurantPage = () => {
             <div className="restaurant-header">
                 {/* תמונה ראשית */}
                 <img 
-                    src={`http://localhost:7000/${restaurant.mainImage}`} 
+                    src={`http://localhost:5000/${restaurant.mainImage}`} 
                     alt={restaurant.res_name} 
                     className="main-image"
                 />
@@ -180,7 +180,7 @@ const RestaurantPage = () => {
                         {restaurant.all_images && restaurant.all_images.map((image, index) => (
                             <img 
                                 key={index}
-                                src={`http://localhost:7000/${image}`}
+                                src={`http://localhost:5000/${image}`}
                                 alt={`${restaurant.res_name} ${index + 1}`}
                                 className="gallery-image"
                             />
