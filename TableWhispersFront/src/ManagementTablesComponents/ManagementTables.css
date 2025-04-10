@@ -709,3 +709,216 @@
 .mgt-client-name, .mgt-reservation-time, .mgt-reservation-duration, .mgt-guest-count {
   display: block !important;
 }
+/* Updated styles for the header area */
+.mgt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+  background-color: #fff;
+  border-radius: 6px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.mgt-header h1 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0;
+  min-width: 180px;
+}
+
+.mgt-date-time-filters {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-grow: 1;
+  max-width: 650px;
+}
+
+.mgt-date-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mgt-date-picker label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4b5563;
+  min-width: 45px;
+}
+
+.mgt-date-selector {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+  flex-grow: 1;
+  max-width: 150px;
+}
+
+.mgt-status-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mgt-status-filter label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4b5563;
+  min-width: 50px;
+}
+
+.mgt-status-filter select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 140px;
+}
+
+.mgt-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  min-width: 200px;
+}
+
+.mgt-btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #d1d5db;
+  background-color: white;
+  color: #4b5563;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.mgt-btn:hover {
+  background-color: #f9fafb;
+}
+
+.mgt-btn-active {
+  background-color: #4a6da7;
+  color: white;
+  border-color: #4a6da7;
+}
+
+.mgt-btn-active:hover {
+  background-color: #3d5a8a;
+}
+
+/* Updated styles for the controls row */
+.mgt-controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  padding: 12px 16px;
+}
+
+.mgt-sections {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mgt-section-btn {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mgt-section-btn:hover {
+  background-color: #f3f4f6;
+}
+
+.mgt-section-btn.active {
+  background-color: #4a6da7;
+  color: white;
+  border-color: #4a6da7;
+}
+
+/* Make socket status indicator more visible */
+.mgt-socket-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #4b5563;
+  padding: 8px 12px;
+  background-color: #f3f4f6;
+  border-radius: 4px;
+  margin-left: 16px;
+}
+
+.mgt-socket-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.mgt-socket-indicator.connected {
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.mgt-socket-indicator.disconnected {
+  background-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+/* Table details modal styling updates */
+.mgt-table-details {
+  padding: 12px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.mgt-reservation-details h3 {
+  font-size: 16px;
+  color: #4b5563;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mgt-reservation-item {
+  padding: 12px;
+  margin-bottom: 12px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border-left: 4px solid #4a6da7;
+}
+
+/* Improve filter info display */
+.mgt-status-info {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.mgt-info-message {
+  padding: 8px 16px;
+  background-color: #f3f4f6;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #4b5563;
+}

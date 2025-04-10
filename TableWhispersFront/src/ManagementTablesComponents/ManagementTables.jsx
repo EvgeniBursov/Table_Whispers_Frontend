@@ -1,20 +1,40 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import io from 'socket.io-client';
 import './ManagementTables.css';
 
+/**
+ * ManagementTables Component - Improved Version
+ * Displays and manages restaurant tables and their reservations
+ * Features:
+ * - Working date filter
+ * - Simplified visualization focusing on reservations
+ * - Fixed status filtering
+ * - Optimized code structure and improved readability
+ */
 const ManagementTables = ({ restaurantId }) => {
+  // Main state
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [selectedTable, setSelectedTable] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showReservationForm, setShowReservationForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  // Filter and view state
   const [timeFilter, setTimeFilter] = useState({
     enabled: false,
     startTime: '00:00',
     endTime: '23:59'
   });
+  const [sections, setSections] = useState(['main']);
+  const [activeSection, setActiveSection] = useState('main');
+  const [floorPlanSize, setFloorPlanSize] = useState({ width: '100%', height: 600 });
+  const [zoomLevel, setZoomLevel] = useState(100);
+  const [statusFilter, setStatusFilter] = useState(''); // Empty to start - show all reservations
+  
+  // Form data
   const [newTableData, setNewTableData] = useState({
     table_number: '',
     seats: 2,
@@ -26,32 +46,53 @@ const ManagementTables = ({ restaurantId }) => {
     x_position: 50,
     y_position: 50
   });
-  const [draggedTable, setDraggedTable] = useState(null);
-  const [sections, setSections] = useState(['main']);
-  const [activeSection, setActiveSection] = useState('main');
-  const [floorPlanSize, setFloorPlanSize] = useState({ width: '100%', height: 600 });
-  const [zoomLevel, setZoomLevel] = useState(100);
+  const [newReservationData, setNewReservationData] = useState({
+    client_email: '',
+    client_name: '',
+    guests: 2,
+    start_time: '',
+    date: formatDateForApi(new Date())
+  });
   
+  // UI state
+  const [draggedTable, setDraggedTable] = useState(null);
+  const [socketConnected, setSocketConnected] = useState(false);
+  
+  // Refs
   const floorPlanRef = useRef(null);
   const socketRef = useRef(null);
   
-  // Format date for API requests (YYYY-MM-DD)
-  const formatDateForApi = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  // API base URL
+  const API_URL = 'http://localhost:5000';
   
-  // Format time for display (HH:MM format)
-  const formatTime = (dateString) => {
+  /**
+   * Format date for API requests (YYYY-MM-DD)
+   */
+  function formatDateForApi(date) {
+    if (!date) return '';
+    
+    // Handle string dates
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  
+  /**
+   * Format time for display (HH:MM format)
+   */
+  function formatTime(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  };
+  }
   
-  // Format duration for display in parentheses
-  const formatDuration = (startTime, endTime) => {
+  /**
+   * Format duration for display (H:MM format)
+   */
+  function formatDuration(startTime, endTime) {
     if (!startTime || !endTime) return '';
     const start = new Date(startTime);
     const end = new Date(endTime);
@@ -63,10 +104,12 @@ const ManagementTables = ({ restaurantId }) => {
       return `(${hours}:${String(minutes).padStart(2, '0')})`;
     }
     
-    return `(${String(durationMinutes).padStart(2, '0')})`;
-  };
+    return `(${String(durationMinutes).padStart(2, '0')} min)`;
+  }
   
-  // Check if a reservation falls within the current time filter
+  /**
+   * Check if a reservation falls within the current time filter
+   */
   const isWithinTimeFilter = (reservation) => {
     if (!timeFilter.enabled) return true;
     
@@ -79,190 +122,242 @@ const ManagementTables = ({ restaurantId }) => {
            (reservationStart <= timeFilter.startTime && reservationEnd >= timeFilter.endTime);
   };
   
-  // Filter tables based on time filter
-  const getFilteredTables = () => {
+  
+  /**
+   * Filter tables based on section, time, and reservation status
+   */
+  const getFilteredTables = useCallback(() => {
+    console.log(`[FILTER] Filtering tables - Section: ${activeSection}, Status: ${statusFilter || 'All'}, Time filter: ${timeFilter.enabled ? 'Enabled' : 'Disabled'}`);
+    
     // First filter by section
     let filtered = tables.filter(table => table.section === activeSection);
     
-    // If time filter is enabled, filter tables that have reservations in that time range
-    if (timeFilter.enabled) {
-      filtered = filtered.map(table => {
-        // Create a new table object with filtered schedule
-        const filteredTable = {...table};
+    // Apply time and status filters to reservations
+    filtered = filtered.map(table => {
+      // Create a new table object with filtered schedule
+      const filteredTable = {...table};
+      
+      // If the table has a schedule, filter it by time and status
+      if (filteredTable.schedule && filteredTable.schedule.length > 0) {
+        const originalSchedule = [...filteredTable.schedule];
         
-        // If the table has a schedule, filter it
-        if (filteredTable.schedule && filteredTable.schedule.length > 0) {
-          filteredTable.schedule = filteredTable.schedule.filter(isWithinTimeFilter);
-        }
-        
-        // If current client exists, check if they fall within filter
-        if (filteredTable.current_client) {
-          const now = new Date();
-          const clientEndTime = new Date(filteredTable.current_client.end_time);
-          const formattedNowTime = formatTime(now);
-          const formattedEndTime = formatTime(clientEndTime);
+        filteredTable.schedule = filteredTable.schedule.filter(res => {
+          // First check if we have a status to filter by
+          const statusMatch = !statusFilter || 
+                             (res.client_status && res.client_status.toLowerCase() === statusFilter.toLowerCase());
           
-          // If current client doesn't fall within time filter, remove it
-          if (!(formattedNowTime >= timeFilter.startTime && formattedNowTime <= timeFilter.endTime) &&
-              !(formattedEndTime >= timeFilter.startTime && formattedEndTime <= timeFilter.endTime)) {
-            filteredTable.current_client = null;
-          }
-        }
+          // Then check time filter if enabled
+          const timeMatch = timeFilter.enabled ? isWithinTimeFilter(res) : true;
+          
+          // Filter out DONE status reservations - only show PLANNING and SEATED
+          const isDoneStatus = res.client_status && 
+                              (res.client_status.toLowerCase() === 'done' || 
+                               res.status && res.status.toLowerCase() === 'done');
+          
+          return statusMatch && timeMatch && !isDoneStatus;
+        });
         
-        return filteredTable;
-      });
-    }
+        if (originalSchedule.length > 0 && filteredTable.schedule.length === 0) {
+          console.log(`[TABLE ${table.table_number}] All reservations filtered out. Original statuses: ${originalSchedule.map(r => r.client_status).join(', ')}`);
+        }
+      }
+      
+      return filteredTable;
+    });
+    
+    // Count tables with reservations after filtering
+    const tablesWithReservations = filtered.filter(table => 
+      table.schedule && table.schedule.length > 0
+    ).length;
+    
+    console.log(`[FILTER] After filtering: ${filtered.length} total tables, ${tablesWithReservations} with reservations`);
     
     return filtered;
-  };
+  }, [tables, activeSection, statusFilter, timeFilter]);
   
-  // Connect to Socket.IO server
+  /**
+   * Connect to Socket.IO server and set up event handlers
+   */
   useEffect(() => {
-    // Create socket connection
-    const socket = io('http://localhost:7000'); // Use your actual server URL
+    const socket = io(API_URL);
     socketRef.current = socket;
     
     socket.on('connect', () => {
-      console.log('Connected to WebSocket server');
+      setSocketConnected(true);
       
       // Join room for real-time updates specific to this restaurant
       if (restaurantId) {
         socket.emit('joinRestaurant', restaurantId);
+        socket.emit('joinRestaurantRoom', { restaurantId });
       }
     });
     
     socket.on('disconnect', () => {
-      console.log('Disconnected from WebSocket server');
+      setSocketConnected(false);
     });
     
-    // Handle floor layout updated event (refresh everything)
-    socket.on('floorLayoutUpdated', (data) => {
-      if (data.restaurantId === restaurantId) {
-        console.log('Floor layout updated, refreshing data');
-        fetchTables();
-      }
-    });
-    
-    // Handle table added event
-    socket.on('tableAdded', (data) => {
-      if (data.restaurantId === restaurantId) {
-        console.log('Table added:', data.table);
-        setTables(prevTables => [...prevTables, data.table]);
-      }
-    });
-    
-    // Handle table position updated event
-    socket.on('tablePositionUpdated', (data) => {
-      if (data.restaurantId === restaurantId) {
-        console.log('Table position updated:', data);
-        setTables(prevTables => 
-          prevTables.map(table => {
-            if (table.id === data.tableId || table._id === data.tableId) {
-              return {
-                ...table,
-                x_position: data.x_position,
-                y_position: data.y_position
-              };
-            }
-            return table;
-          })
-        );
-      }
-    });
-    
-    // Handle table details updated event
-    socket.on('tableDetailsUpdated', (data) => {
-      if (data.restaurantId === restaurantId) {
-        console.log('Table details updated:', data.table);
-        setTables(prevTables => 
-          prevTables.map(table => {
-            if (table.id === data.table._id || table._id === data.table._id) {
-              return {
-                ...table,
-                ...data.table
-              };
-            }
-            return table;
-          })
-        );
-      }
-    });
-    
-    // Handle table deleted event
-    socket.on('tableDeleted', (data) => {
-      if (data.restaurantId === restaurantId) {
-        console.log('Table deleted:', data.tableId);
-        setTables(prevTables => 
-          prevTables.filter(table => (
-            table.id !== data.tableId && table._id !== data.tableId
-          ))
-        );
-        
-        // Close details modal if it was for the deleted table
-        if (selectedTable && (selectedTable.id === data.tableId || selectedTable._id === data.tableId)) {
-          setSelectedTable(null);
+    // Setup event handlers for socket events
+    const socketEvents = {
+      'floorLayoutUpdated': (data) => {
+        if (data.restaurantId === restaurantId) {
+          console.log('[SOCKET] Floor layout updated:', data);
+          fetchTables();
+        }
+      },
+      'tableAdded': (data) => {
+        if (data.restaurantId === restaurantId) {
+          console.log('[SOCKET] Table added:', data.table);
+          setTables(prevTables => [...prevTables, data.table]);
+        }
+      },
+      'tablePositionUpdated': (data) => {
+        if (data.restaurantId === restaurantId) {
+          updateTableInState(data.tableId, {
+            x_position: data.x_position,
+            y_position: data.y_position
+          });
+        }
+      },
+      'tableDetailsUpdated': (data) => {
+        if (data.restaurantId === restaurantId) {
+          console.log('[SOCKET] Table details updated:', data.table);
+          updateTableInState(data.table._id, data.table);
+        }
+      },
+      'tableDeleted': (data) => {
+        if (data.restaurantId === restaurantId) {
+          console.log('[SOCKET] Table deleted:', data.tableId);
+          setTables(prevTables => 
+            prevTables.filter(table => (
+              table.id !== data.tableId && table._id !== data.tableId
+            ))
+          );
+          
+          // Close details modal if it was for the deleted table
+          if (selectedTable && (selectedTable.id === data.tableId || selectedTable._id === data.tableId)) {
+            setSelectedTable(null);
+          }
+        }
+      },
+      // Events that trigger a full table refresh
+      'reservationAssigned': (data) => {
+        if (data.restaurantId === restaurantId) {
+          console.log('[SOCKET] Reservation assigned:', data);
+          fetchTables();
+        }
+      },
+      'reservationCreated': (data) => {
+        if (data.restaurantId === restaurantId) {
+          console.log('[SOCKET] Reservation created:', data.newReservation);
+          fetchTables();
+        }
+      },
+      'reservationStatusChanged': (data) => {
+        if (data.restaurantId === restaurantId) {
+          console.log('[SOCKET] Reservation status changed:', data.newStatus);
+          fetchTables();
+        }
+      },
+      'reservationUpdated': (data) => {
+        if (data.restaurantId === restaurantId) {
+          console.log('[SOCKET] Reservation updated');
+          fetchTables();
+        }
+      },
+      'clientCancelledReservation': (data) => {
+        if (data.restaurantId === restaurantId) {
+          console.log('[SOCKET] Reservation cancelled');
+          fetchTables();
+        }
+      },
+      'reservationDetailsChanged': (data) => {
+        if (data.restaurantId === restaurantId) {
+          console.log('[SOCKET] Reservation details changed:', data.updates);
+          fetchTables();
+        }
+      },
+      'tableStatusUpdated': (data) => {
+        if (data.restaurantId === restaurantId) {
+          console.log('[SOCKET] Table status updated:', data.status);
+          updateTableInState(data.tableId, { status: data.status });
         }
       }
-    });
+    };
     
-    // Handle reservation assigned to table event
-    socket.on('reservationAssigned', (data) => {
-      if (data.restaurantId === restaurantId) {
-        console.log('Reservation assigned:', data);
-        fetchTables(); // Easier to refresh all tables
-      }
-    });
-    
-    // Handle table status updated event
-    socket.on('tableStatusUpdated', (data) => {
-      if (data.restaurantId === restaurantId) {
-        console.log('Table status updated:', data);
-        setTables(prevTables => 
-          prevTables.map(table => {
-            if (table.id === data.tableId || table._id === data.tableId) {
-              return {
-                ...table,
-                status: data.status
-              };
-            }
-            return table;
-          })
-        );
-      }
+    // Register all event handlers
+    Object.entries(socketEvents).forEach(([event, handler]) => {
+      socket.on(event, handler);
     });
     
     // Clean up on unmount
     return () => {
       if (socketRef.current) {
+        if (restaurantId) {
+          socketRef.current.emit('leaveRestaurantRoom', { restaurantId });
+        }
+        
+        // Remove all event listeners
+        Object.keys(socketEvents).forEach(event => {
+          socket.off(event);
+        });
+        
         socketRef.current.disconnect();
       }
     };
-  }, [restaurantId]);
+  }, [restaurantId, API_URL]);
   
-  // Fetch tables data
-  const fetchTables = async () => {
+  /**
+   * Helper to update a table in state
+   */
+  const updateTableInState = (tableId, updates) => {
+    setTables(prevTables => 
+      prevTables.map(table => {
+        if (table.id === tableId || table._id === tableId) {
+          return { ...table, ...updates };
+        }
+        return table;
+      })
+    );
+    
+    // Also update selected table if it's the one being updated
+    if (selectedTable && (selectedTable.id === tableId || selectedTable._id === tableId)) {
+      setSelectedTable(prev => ({ ...prev, ...updates }));
+    }
+  };
+  
+  /**
+   * Fetch tables data from API
+   */
+  const fetchTables = useCallback(async () => {
+    if (!restaurantId) return;
+    
     try {
       setLoading(true);
       
-      const apiUrl = 'http://localhost:7000';
       const formattedDate = formatDateForApi(selectedDate);
-      const response = await fetch(`${apiUrl}/restaurant/${restaurantId}/floor-layout?date=${formattedDate}`, {
+      console.log('[API] Fetching tables for date:', formattedDate);
+      
+      const response = await fetch(`${API_URL}/restaurant/${restaurantId}/floor-layout?date=${formattedDate}`, {
         headers: {
           'Authorization': localStorage.getItem('token') || ''
         }
       });
       
       const data = await response.json();
+      console.log('[API] Tables response:', data);
       
       if (!data.success) {
         throw new Error(data.message || 'Failed to fetch tables');
       }
       
-      setTables(data.layout || []);
+      // Process the tables data from the API
+      const processedTables = (data.layout || []);
+      console.log('[API] Received tables:', processedTables.length);
+      setTables(processedTables);
       
-      // Extract unique sections
-      if (data.layout && data.layout.length > 0) {
-        const uniqueSections = [...new Set(data.layout.map(table => table.section || 'main'))];
+      // Extract unique sections from tables
+      if (processedTables.length > 0) {
+        const uniqueSections = [...new Set(processedTables.map(table => table.section || 'main'))];
         setSections(uniqueSections);
         
         // Only set active section if current one doesn't exist in new sections
@@ -273,21 +368,23 @@ const ManagementTables = ({ restaurantId }) => {
       
       setError(null);
     } catch (err) {
-      console.error('Error fetching tables:', err);
+      console.error('[API] Error fetching tables:', err);
       setError('Failed to load tables. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [restaurantId, selectedDate, activeSection, API_URL]);
   
-  // Fetch tables when component mounts or date changes
+  /**
+   * Fetch tables when component mounts or date changes
+   */
   useEffect(() => {
-    if (restaurantId) {
-      fetchTables();
-    }
-  }, [restaurantId, selectedDate]);
+    fetchTables();
+  }, [fetchTables, selectedDate]);
   
-  // Handle zoom in/out
+  /**
+   * Handle zoom in/out of floor plan
+   */
   const handleZoomChange = (change) => {
     setZoomLevel(prevZoom => {
       const newZoom = prevZoom + change;
@@ -295,7 +392,9 @@ const ManagementTables = ({ restaurantId }) => {
     });
   };
   
-  // Start dragging a table
+  /**
+   * Start dragging a table (in edit mode)
+   */
   const handleDragStart = (e, tableId) => {
     if (!editMode) return;
     
@@ -305,7 +404,9 @@ const ManagementTables = ({ restaurantId }) => {
     e.dataTransfer.setData('text/plain', tableId);
   };
   
-  // Allow dropping
+  /**
+   * Allow dropping tables during drag
+   */
   const handleDragOver = (e) => {
     if (!editMode || !draggedTable) return;
     
@@ -313,7 +414,9 @@ const ManagementTables = ({ restaurantId }) => {
     e.dataTransfer.dropEffect = 'move';
   };
   
-  // Handle drop to position table
+  /**
+   * Handle dropping a table to reposition it
+   */
   const handleDrop = (e) => {
     if (!editMode || !draggedTable) return;
     
@@ -335,11 +438,12 @@ const ManagementTables = ({ restaurantId }) => {
     setDraggedTable(null);
   };
   
-  // API call to update table position
+  /**
+   * API call to update table position
+   */
   const updateTablePosition = async (tableId, x, y) => {
     try {
-      const apiUrl = 'http://localhost:7000';
-      const response = await fetch(`${apiUrl}/tables/${tableId}/position`, {
+      const response = await fetch(`${API_URL}/tables/${tableId}/position`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -364,54 +468,74 @@ const ManagementTables = ({ restaurantId }) => {
     }
   };
   
-  // Handle table selection
+  /**
+   * Handle clicking on a table to view or edit
+   */
   const handleTableClick = (table) => {
     if (editMode) {
       setSelectedTable(table);
     } else {
-      fetchTableDetails(table.id);
+      fetchTableDetails(table.id || table._id);
     }
   };
   
-  // Fetch detailed table information including all reservations
+  /**
+   * Fetch detailed table information including reservations
+   */
   const fetchTableDetails = async (tableId) => {
     try {
-      const apiUrl = 'http://localhost:7000';
       const formattedDate = formatDateForApi(selectedDate);
+      console.log(`[API] Fetching details for table ${tableId} on date ${formattedDate}`);
       
-      const response = await fetch(`${apiUrl}/tables/${tableId}/reservations?date=${formattedDate}`, {
+      const response = await fetch(`${API_URL}/tables/${tableId}/reservations?date=${formattedDate}`, {
         headers: {
           'Authorization': localStorage.getItem('token') || ''
         }
       });
       
       const data = await response.json();
+      console.log('[API] Table details response:', data);
       
       if (!data.success) {
         throw new Error(data.message || 'Failed to fetch table details');
       }
       
-      // Find the table in our current state and combine with reservation data
+      // Find the table in our current state
       const tableInfo = tables.find(t => t.id === tableId || t._id === tableId);
       
-      if (tableInfo) {
-        setSelectedTable({
-          ...tableInfo,
-          reservations: data.reservations || []
-        });
+      if (!tableInfo) {
+        console.log(`[API] Table with ID ${tableId} not found in local state`);
+        return;
       }
+      
+      // Get reservations with status filtering if needed
+      let reservations = data.reservations || [];
+      console.log(`[API] Table has ${reservations.length} reservations`);
+      
+      if (reservations.length > 0) {
+        console.log('[API] First reservation:', reservations[0]);
+      }
+      
+      setSelectedTable({
+        ...tableInfo,
+        reservations: reservations
+      });
     } catch (error) {
-      console.error('Error fetching table details:', error);
+      console.error('[API] Error fetching table details:', error);
       setError('Failed to load table details. Please try again.');
     }
   };
   
-  // Close table details modal
+  /**
+   * Close table details modal
+   */
   const handleCloseDetails = () => {
     setSelectedTable(null);
   };
   
-  // Handle form input changes for new table
+  /**
+   * Handle form input changes for new table
+   */
   const handleNewTableInputChange = (e) => {
     const { name, value } = e.target;
     setNewTableData({
@@ -424,13 +548,27 @@ const ManagementTables = ({ restaurantId }) => {
     });
   };
   
-  // Submit new table form
+  /**
+   * Handle form input changes for new reservation
+   */
+  const handleNewReservationInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewReservationData({
+      ...newReservationData,
+      [name]: name === 'guests' ? parseInt(value, 10) : value
+    });
+  };
+  
+  /**
+   * Submit new table form
+   */
   const handleAddTable = async (e) => {
     e.preventDefault();
     
     try {
-      const apiUrl = 'http://localhost:7000';
-      const response = await fetch(`${apiUrl}/tables`, {
+      console.log('[API] Creating new table:', newTableData);
+      
+      const response = await fetch(`${API_URL}/tables`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -443,12 +581,11 @@ const ManagementTables = ({ restaurantId }) => {
       });
       
       const data = await response.json();
+      console.log('[API] Create table response:', data);
       
       if (!data.success) {
         throw new Error(data.message || 'Failed to add table');
       }
-      
-      // Table will be added via Socket.IO event
       
       // Reset form and hide it
       setNewTableData({
@@ -465,16 +602,84 @@ const ManagementTables = ({ restaurantId }) => {
       setShowAddForm(false);
       
     } catch (error) {
-      console.error('Error adding table:', error);
+      console.error('[API] Error adding table:', error);
       setError('Failed to add table. Please try again.');
     }
   };
   
-  // Update existing table
+  /**
+   * Submit new reservation form
+   */
+  const handleAddReservation = async (e) => {
+    e.preventDefault();
+    
+    if (!selectedTable) {
+      setError('No table selected for reservation');
+      return;
+    }
+    
+    try {
+      // Combine date and time for start time
+      const dateObj = new Date(newReservationData.date);
+      const [hours, minutes] = newReservationData.start_time.split(':').map(Number);
+      dateObj.setHours(hours, minutes, 0, 0);
+      
+      const formattedStartTime = dateObj.toISOString();
+      
+      const requestData = {
+        table_id: selectedTable.id || selectedTable._id,
+        client_email: newReservationData.client_email,
+        client_name: newReservationData.client_name,
+        guests: newReservationData.guests,
+        start_time: formattedStartTime,
+        restaurant_id: restaurantId
+      };
+      
+      console.log('[API] Creating new reservation:', requestData);
+      
+      const response = await fetch(`${API_URL}/tables/${selectedTable.id || selectedTable._id}/reservations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': localStorage.getItem('token') || ''
+        },
+        body: JSON.stringify(requestData),
+      });
+      
+      const data = await response.json();
+      console.log('[API] Create reservation response:', data);
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to create reservation');
+      }
+      
+      // Reset form and hide it
+      setNewReservationData({
+        client_email: '',
+        client_name: '',
+        guests: 2,
+        start_time: '',
+        date: formatDateForApi(new Date())
+      });
+      setShowReservationForm(false);
+      
+      // Refresh tables to show the new reservation
+      fetchTables();
+      
+    } catch (error) {
+      console.error('[API] Error creating reservation:', error);
+      setError('Failed to create reservation: ' + error.message);
+    }
+  };
+  
+  /**
+   * Update existing table
+   */
   const handleUpdateTable = async (tableId, updateData) => {
     try {
-      const apiUrl = 'http://localhost:7000';
-      const response = await fetch(`${apiUrl}/tables/${tableId}/details`, {
+      console.log(`[API] Updating table ${tableId}:`, updateData);
+      
+      const response = await fetch(`${API_URL}/tables/${tableId}/details`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -484,31 +689,33 @@ const ManagementTables = ({ restaurantId }) => {
       });
       
       const data = await response.json();
+      console.log('[API] Update table response:', data);
       
       if (!data.success) {
         throw new Error(data.message || 'Failed to update table');
       }
       
-      // Table will be updated via Socket.IO event
-      
       // Close details modal
       setSelectedTable(null);
       
     } catch (error) {
-      console.error('Error updating table:', error);
+      console.error('[API] Error updating table:', error);
       setError('Failed to update table. Please try again.');
     }
   };
   
-  // Delete a table
+  /**
+   * Delete a table
+   */
   const handleDeleteTable = async (tableId) => {
     if (!window.confirm('Are you sure you want to delete this table?')) {
       return;
     }
     
     try {
-      const apiUrl = 'http://localhost:7000';
-      const response = await fetch(`${apiUrl}/tables/${tableId}`, {
+      console.log(`[API] Deleting table ${tableId}`);
+      
+      const response = await fetch(`${API_URL}/tables/${tableId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': localStorage.getItem('token') || ''
@@ -516,6 +723,7 @@ const ManagementTables = ({ restaurantId }) => {
       });
       
       const data = await response.json();
+      console.log('[API] Delete table response:', data);
       
       if (!data.success) {
         throw new Error(data.message || 'Failed to delete table');
@@ -524,12 +732,14 @@ const ManagementTables = ({ restaurantId }) => {
       // Table will be removed via Socket.IO event
       
     } catch (error) {
-      console.error('Error deleting table:', error);
+      console.error('[API] Error deleting table:', error);
       setError('Failed to delete table. Please try again.');
     }
   };
   
-  // Add a new section
+  /**
+   * Add a new section
+   */
   const handleAddSection = () => {
     const sectionName = prompt('Enter new section name:');
     if (sectionName && !sections.includes(sectionName)) {
@@ -538,7 +748,9 @@ const ManagementTables = ({ restaurantId }) => {
     }
   };
   
-  // Handle resizing the floor plan
+  /**
+   * Handle resizing the floor plan
+   */
   const handleFloorPlanResize = (dimension, value) => {
     setFloorPlanSize(prev => ({
       ...prev,
@@ -546,13 +758,40 @@ const ManagementTables = ({ restaurantId }) => {
     }));
   };
   
-  // Render table based on its shape and status with reservation information
+  /**
+   * Open the reservation form for a specific table
+   */
+  const handleMakeReservation = (table) => {
+    setSelectedTable(table);
+    
+    // Set reservation default time to current time + 1 hour, rounded to nearest 30 min
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    now.setMinutes(Math.ceil(now.getMinutes() / 30) * 30);
+    
+    const defaultTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    setNewReservationData({
+      ...newReservationData,
+      start_time: defaultTime
+    });
+    
+    setShowReservationForm(true);
+  };
+  
+  /**
+   * Render a table with its shape and reservations
+   */
   const renderTable = (table) => {
     const isSelected = selectedTable && (selectedTable.id === table.id || selectedTable._id === table._id);
     const isDragging = draggedTable === table.id || draggedTable === table._id;
     
+    // Determine status class for styling
     let statusClass = '';
-    switch(table.status?.toLowerCase()) {
+    // Use table_status if available, fall back to status for compatibility
+    const tableStatus = (table.table_status || table.status || 'available').toLowerCase();
+    
+    switch(tableStatus) {
       case 'available':
         statusClass = 'mgt-table-available';
         break;
@@ -591,10 +830,16 @@ const ManagementTables = ({ restaurantId }) => {
       transformOrigin: 'top left'
     };
     
-    // Check if we have schedule entries for this table
-    const hasSchedule = table.schedule && table.schedule.length > 0;
+    // Filter schedule to only show active reservations (not DONE or CANCELLED)
+    const filteredSchedule = table.schedule && table.schedule.length > 0
+      ? table.schedule.filter(res => 
+          !res.client_status || 
+          (res.client_status.toLowerCase() !== 'done' && 
+           res.client_status.toLowerCase() !== 'cancelled'))
+      : [];
     
-    // Base table element with new design
+    const hasSchedule = filteredSchedule.length > 0;
+    
     return (
       <div 
         className={`mgt-table ${table.shape === 'round' ? 'mgt-table-round' : ''} ${statusClass} ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''}`}
@@ -611,14 +856,14 @@ const ManagementTables = ({ restaurantId }) => {
         
         {/* Reservation schedule display */}
         <div className="mgt-table-reservations">
-          {hasSchedule && table.schedule.map((reservation, index) => (
+          {hasSchedule && filteredSchedule.map((reservation, index) => (
             <div 
               key={reservation.id || index} 
               className={`mgt-reservation ${reservation.is_current ? 'current-reservation' : ''}`}
             >
               <div className="mgt-client-name">
                 {reservation.client_name || 
-                 `${reservation.first_name || 'Guest'} ${reservation.last_name || ''}`}
+                 `${reservation.first_name || ''} ${reservation.last_name || 'Guest'}`}
               </div>
               <div className="mgt-reservation-time">
                 {formatTime(reservation.start_time)} - {formatTime(reservation.end_time)}
@@ -626,32 +871,30 @@ const ManagementTables = ({ restaurantId }) => {
               <div className="mgt-reservation-duration">
                 {formatDuration(reservation.start_time, reservation.end_time)}
               </div>
-              <div className="mgt-guest-count">{reservation.guests}</div>
+              <div className="mgt-guest-count">
+                {reservation.guests}
+              </div>
             </div>
           ))}
           
           {!hasSchedule && (
-            <div className="mgt-empty-table">Available</div>
+            <div className="mgt-empty-table">
+              {table.table_status === 'available' ? 'Available' : table.table_status}
+            </div>
           )}
         </div>
       </div>
     );
   };
   
+  // Loading state
   if (loading && tables.length === 0) {
-    return (
-      <div className="mgt-container">
-        <div className="mgt-loading">Loading tables data...</div>
-      </div>
-    );
+    return <div className="mgt-container"><div className="mgt-loading">Loading tables data...</div></div>;
   }
   
+  // Error state
   if (error && tables.length === 0) {
-    return (
-      <div className="mgt-container">
-        <div className="mgt-error">{error}</div>
-      </div>
-    );
+    return <div className="mgt-container"><div className="mgt-error">{error}</div></div>;
   }
   
   // Get filtered tables
@@ -669,7 +912,10 @@ const ManagementTables = ({ restaurantId }) => {
                 type="date" 
                 className="mgt-date-selector"
                 value={formatDateForApi(selectedDate)}
-                onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                onChange={(e) => {
+                  const newDate = new Date(e.target.value);
+                  setSelectedDate(newDate);
+                }}
               />
             </div>
             
@@ -679,7 +925,9 @@ const ManagementTables = ({ restaurantId }) => {
                   <input 
                     type="checkbox" 
                     checked={timeFilter.enabled}
-                    onChange={() => setTimeFilter(prev => ({...prev, enabled: !prev.enabled}))}
+                    onChange={() => {
+                      setTimeFilter(prev => ({...prev, enabled: !prev.enabled}));
+                    }}
                   />
                   Filter by time
                 </label>
@@ -706,12 +954,29 @@ const ManagementTables = ({ restaurantId }) => {
                 </div>
               )}
             </div>
+            
+            <div className="mgt-status-filter">
+              <label>Status:</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                }}
+              >
+                <option value="">All Statuses</option>
+                <option value="planning">Planning</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="seated">Seated</option>
+              </select>
+            </div>
           </div>
           
           <div className="mgt-actions">
             <button 
               className={`mgt-btn ${editMode ? 'mgt-btn-active' : ''}`}
-              onClick={() => setEditMode(!editMode)}
+              onClick={() => {
+                setEditMode(!editMode);
+              }}
             >
               {editMode ? 'Exit Edit Mode' : 'Edit Layout'}
             </button>
@@ -719,11 +984,26 @@ const ManagementTables = ({ restaurantId }) => {
             {editMode && (
               <button 
                 className="mgt-btn mgt-btn-add"
-                onClick={() => setShowAddForm(true)}
+                onClick={() => {
+                  setShowAddForm(true);
+                }}
               >
                 Add New Table
               </button>
             )}
+            
+            <button 
+              className="mgt-btn mgt-btn-refresh"
+              onClick={() => fetchTables()}
+              title="Refresh Tables"
+            >
+              Refresh
+            </button>
+            
+            <div className="mgt-socket-status">
+              <span className={`mgt-socket-indicator ${socketConnected ? 'connected' : 'disconnected'}`}></span>
+              {socketConnected ? 'Real-time updates active' : 'Real-time updates inactive'}
+            </div>
           </div>
         </div>
         
@@ -735,7 +1015,9 @@ const ManagementTables = ({ restaurantId }) => {
               <button 
                 key={section}
                 className={`mgt-section-btn ${activeSection === section ? 'active' : ''}`}
-                onClick={() => setActiveSection(section)}
+                onClick={() => {
+                  setActiveSection(section);
+                }}
               >
                 {section}
               </button>
@@ -790,6 +1072,12 @@ const ManagementTables = ({ restaurantId }) => {
             <span>Maintenance/Inactive</span>
           </div>
         </div>
+        
+        <div className="mgt-status-info">
+          <div className="mgt-info-message">
+            Showing reservations with status: <strong>{statusFilter || 'All'}</strong>
+          </div>
+        </div>
       </div>
       
       <div 
@@ -813,6 +1101,14 @@ const ManagementTables = ({ restaurantId }) => {
           {editMode && (
             <div className="mgt-edit-instructions">
               {draggedTable ? 'Drop table to place it' : 'Drag tables to reposition them'}
+            </div>
+          )}
+          
+          {filteredTables.length === 0 && (
+            <div className="mgt-no-tables-message">
+              {tables.length === 0 
+                ? 'No tables found. Add tables to get started.' 
+                : 'No tables match the current filter criteria.'}
             </div>
           )}
         </div>
@@ -937,8 +1233,100 @@ const ManagementTables = ({ restaurantId }) => {
         </div>
       )}
       
+      {/* Add New Reservation Form Modal */}
+      {showReservationForm && selectedTable && (
+        <div className="mgt-modal-overlay">
+          <div className="mgt-modal">
+            <div className="mgt-modal-header">
+              <h2>Create Reservation for Table {selectedTable.table_number}</h2>
+              <button className="mgt-modal-close" onClick={() => setShowReservationForm(false)}>×</button>
+            </div>
+            
+            <form className="mgt-reservation-form" onSubmit={handleAddReservation}>
+              <div className="mgt-form-group">
+                <label>Customer Email:</label>
+                <input 
+                  type="email" 
+                  name="client_email"
+                  value={newReservationData.client_email}
+                  onChange={handleNewReservationInputChange}
+                  required
+                  placeholder="customer@example.com"
+                />
+              </div>
+              
+              <div className="mgt-form-group">
+                <label>Customer Name:</label>
+                <input 
+                  type="text" 
+                  name="client_name"
+                  value={newReservationData.client_name}
+                  onChange={handleNewReservationInputChange}
+                  required
+                  placeholder="First Last"
+                />
+              </div>
+              
+              <div className="mgt-form-group">
+                <label>Number of Guests:</label>
+                <input 
+                  type="number" 
+                  name="guests"
+                  value={newReservationData.guests}
+                  onChange={handleNewReservationInputChange}
+                  min="1"
+                  max={selectedTable.seats}
+                  required
+                />
+                <small>Max {selectedTable.seats} for this table</small>
+              </div>
+              
+              <div className="mgt-form-row">
+                <div className="mgt-form-group">
+                  <label>Date:</label>
+                  <input 
+                    type="date" 
+                    name="date"
+                    value={newReservationData.date}
+                    onChange={handleNewReservationInputChange}
+                    required
+                  />
+                </div>
+                
+                <div className="mgt-form-group">
+                  <label>Time:</label>
+                  <input 
+                    type="time" 
+                    name="start_time"
+                    value={newReservationData.start_time}
+                    onChange={handleNewReservationInputChange}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="mgt-form-actions">
+                <button 
+                  type="button" 
+                  className="mgt-btn mgt-btn-cancel"
+                  onClick={() => setShowReservationForm(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="mgt-btn mgt-btn-save"
+                >
+                  Create Reservation
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
       {/* Table Details Modal */}
-      {selectedTable && (
+      {selectedTable && !showReservationForm && !showAddForm && (
         <div className="mgt-modal-overlay">
           <div className="mgt-modal">
             <div className="mgt-modal-header">
@@ -949,15 +1337,6 @@ const ManagementTables = ({ restaurantId }) => {
             <div className="mgt-modal-content">
               <div className="mgt-table-details">
                 <div className="mgt-detail-row">
-                  <div className="mgt-detail-label">Status:</div>
-                  <div className="mgt-detail-value">
-                    <span className={`mgt-status-badge mgt-status-${selectedTable.status?.toLowerCase() || 'available'}`}>
-                      {selectedTable.status || 'Available'}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="mgt-detail-row">
                   <div className="mgt-detail-label">Seats:</div>
                   <div className="mgt-detail-value">{selectedTable.seats} people</div>
                 </div>
@@ -966,161 +1345,128 @@ const ManagementTables = ({ restaurantId }) => {
                   <div className="mgt-detail-label">Section:</div>
                   <div className="mgt-detail-value">{selectedTable.section}</div>
                 </div>
-                
-                <div className="mgt-detail-row">
-                  <div className="mgt-detail-label">Shape:</div>
-                  <div className="mgt-detail-value">{selectedTable.shape}</div>
-                </div>
-                
-                {selectedTable.shape === 'round' ? (
-                  <div className="mgt-detail-row">
-                    <div className="mgt-detail-label">Size:</div>
-                    <div className="mgt-detail-value">{selectedTable.size}px</div>
-                  </div>
-                ) : (
-                  <div className="mgt-detail-row">
-                    <div className="mgt-detail-label">Dimensions:</div>
-                    <div className="mgt-detail-value">{selectedTable.width}px × {selectedTable.height}px</div>
-                  </div>
-                )}
               </div>
               
-              {/* Current client if table is occupied */}
-              {selectedTable.current_client && (
-                <div className="mgt-reservation-details">
-                  <h3>Current Customer</h3>
-                  
-                  <div className="mgt-detail-row">
-                    <div className="mgt-detail-label">Name:</div>
-                    <div className="mgt-detail-value">{selectedTable.current_client.name}</div>
-                  </div>
-                  
-                  <div className="mgt-detail-row">
-                    <div className="mgt-detail-label">Guests:</div>
-                    <div className="mgt-detail-value">{selectedTable.current_client.guests}</div>
-                  </div>
-                  
-                  <div className="mgt-detail-row">
-                    <div className="mgt-detail-label">End Time:</div>
-                    <div className="mgt-detail-value">{formatTime(selectedTable.current_client.end_time)}</div>
-                  </div>
-                </div>
-              )}
-              
               {/* All reservations for today */}
-              {selectedTable.schedule && selectedTable.schedule.length > 0 && (
-                <div className="mgt-reservation-details">
-                  <h3>Today's Reservations</h3>
-                  
-                  {selectedTable.schedule.map((reservation, index) => (
-                    <div key={reservation.id || index} className="mgt-reservation-item">
-                      <div className="mgt-detail-row">
-                        <div className="mgt-detail-label">Time:</div>
-                        <div className="mgt-detail-value">
-                          {formatTime(reservation.start_time)} - {formatTime(reservation.end_time)}
-                          {" "}{formatDuration(reservation.start_time, reservation.end_time)}
-                        </div>
-                      </div>
-                      
-                      <div className="mgt-detail-row">
-                        <div className="mgt-detail-label">Customer:</div>
-                        <div className="mgt-detail-value">
-                          {reservation.client_name || 
-                           `${reservation.first_name || 'Guest'} ${reservation.last_name || ''}`}
-                        </div>
-                      </div>
-                      
-                      <div className="mgt-detail-row">
-                        <div className="mgt-detail-label">Guests:</div>
-                        <div className="mgt-detail-value">{reservation.guests}</div>
-                      </div>
-                      
-                      <div className="mgt-detail-row">
-                        <div className="mgt-detail-label">Status:</div>
-                        <div className="mgt-detail-value">
-                          <span className={`mgt-reservation-status mgt-reservation-${reservation.status?.toLowerCase() || 'planning'}`}>
-                            {reservation.status}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {index < selectedTable.schedule.length - 1 && (
-                        <hr className="mgt-reservation-divider" />
-                      )}
-                    </div>
-                  ))}
+              {selectedTable.reservations && selectedTable.reservations.length > 0 && (
+          <div className="mgt-reservation-details">
+            <h3>Today's Reservations</h3>
+           
+            {/* Apply status filter here and exclude DONE status */}
+            {(statusFilter 
+               ? selectedTable.reservations.filter(res => 
+                   res.client_status && 
+                   res.client_status.toLowerCase() === statusFilter.toLowerCase() &&
+                   res.client_status.toLowerCase() !== 'done')
+               : selectedTable.reservations.filter(res => 
+                   !res.client_status || 
+                   res.client_status.toLowerCase() !== 'done')
+             ).map((reservation, index) => (
+              <div key={reservation.id || index} className="mgt-reservation-item">
+                <div className="mgt-detail-row">
+                  <div className="mgt-detail-label">Status:</div>
+                  <div className="mgt-detail-value">
+                    <span className={`mgt-reservation-status mgt-reservation-${reservation.client_status?.toLowerCase() || 'planning'}`}>
+                      {reservation.client_status || 'Planning'}
+                    </span>
+                  </div>
                 </div>
-              )}
-              
-              {editMode ? (
-                <div className="mgt-table-actions">
-                  <button 
-                    className="mgt-btn mgt-btn-edit"
-                    onClick={() => {
-                      const seats = prompt('Enter new seats capacity:', selectedTable.seats);
-                      if (seats && !isNaN(parseInt(seats, 10))) {
-                        handleUpdateTable(selectedTable.id || selectedTable._id, { seats: parseInt(seats, 10) });
-                      }
-                    }}
-                  >
-                    Edit Seats
-                  </button>
-                  
-                  <button 
-                    className="mgt-btn mgt-btn-edit"
-                    onClick={() => {
-                      const section = prompt('Enter new section:', selectedTable.section);
-                      if (section) {
-                        handleUpdateTable(selectedTable.id || selectedTable._id, { section });
-                        
-                        // Add new section if it doesn't exist
-                        if (!sections.includes(section)) {
-                          setSections([...sections, section]);
-                        }
-                      }
-                    }}
-                  >
-                    Change Section
-                  </button>
-                  
-                  {!selectedTable.current_client && (
-                    <button 
-                      className="mgt-btn mgt-btn-edit"
-                      onClick={() => {
-                        const statusOptions = ['available', 'reserved', 'maintenance', 'inactive'];
-                        const status = prompt(`Enter new status (${statusOptions.join('/')}):`, selectedTable.status);
-                        if (status && statusOptions.includes(status)) {
-                          handleUpdateTable(selectedTable.id || selectedTable._id, { status });
-                        }
-                      }}
-                    >
-                      Change Status
-                    </button>
-                  )}
-                  
-                  <button 
-                    className="mgt-btn mgt-btn-delete"
-                    onClick={() => handleDeleteTable(selectedTable.id || selectedTable._id)}
-                  >
-                    Delete Table
-                  </button>
+                
+                <div className="mgt-detail-row">
+                  <div className="mgt-detail-label">Time:</div>
+                  <div className="mgt-detail-value">
+                    {formatTime(reservation.start_time)} - {formatTime(reservation.end_time)}
+                    {" "}{formatDuration(reservation.start_time, reservation.end_time)}
+                  </div>
                 </div>
-              ) : (
-                <div className="mgt-table-actions">
-                  {selectedTable.status === 'available' && (
-                    <button 
-                      className="mgt-btn mgt-btn-reserve"
-                      onClick={() => handleMakeReservation(selectedTable)}
-                    >
-                      Make Reservation
-                    </button>
-                  )}
+                
+                <div className="mgt-detail-row">
+                  <div className="mgt-detail-label">Customer:</div>
+                  <div className="mgt-detail-value">
+                    {reservation.client_name || 
+                     `${reservation.first_name || ''} ${reservation.last_name || 'Guest'}`}
+                  </div>
                 </div>
-              )}
-            </div>
+                
+                <div className="mgt-detail-row">
+                  <div className="mgt-detail-label">Guests:</div>
+                  <div className="mgt-detail-value">{reservation.guests}</div>
+                </div>
+                
+                {index < (statusFilter 
+                    ? selectedTable.reservations.filter(res => 
+                        res.client_status && 
+                        res.client_status.toLowerCase() === statusFilter.toLowerCase() &&
+                        res.client_status.toLowerCase() !== 'done')
+                    : selectedTable.reservations.filter(res => 
+                        !res.client_status || 
+                        res.client_status.toLowerCase() !== 'done')
+                  ).length - 1 && (
+                  <hr className="mgt-reservation-divider" />
+                )}
+              </div>
+            ))}
           </div>
-        </div>
-      )}
+        )}
+        
+        {selectedTable.reservations && selectedTable.reservations.length === 0 && (
+          <div className="mgt-empty-reservations">
+            <p>No reservations found for this table on the selected date.</p>
+          </div>
+        )}
+        
+        {editMode ? (
+          <div className="mgt-table-actions">
+            <button 
+              className="mgt-btn mgt-btn-edit"
+              onClick={() => {
+                const seats = prompt('Enter new seats capacity:', selectedTable.seats);
+                if (seats && !isNaN(parseInt(seats, 10))) {
+                  handleUpdateTable(selectedTable.id || selectedTable._id, { seats: parseInt(seats, 10) });
+                }
+              }}
+            >
+              Edit Seats
+            </button>
+            
+            <button 
+              className="mgt-btn mgt-btn-edit"
+              onClick={() => {
+                const section = prompt('Enter new section:', selectedTable.section);
+                if (section) {
+                  handleUpdateTable(selectedTable.id || selectedTable._id, { section });
+                  
+                  // Add new section if it doesn't exist
+                  if (!sections.includes(section)) {
+                    setSections([...sections, section]);
+                  }
+                }
+              }}
+            >
+              Change Section
+            </button>
+            
+            <button 
+              className="mgt-btn mgt-btn-delete"
+              onClick={() => handleDeleteTable(selectedTable.id || selectedTable._id)}
+            >
+              Delete Table
+            </button>
+          </div>
+        ) : (
+          <div className="mgt-table-actions">
+            <button 
+              className="mgt-btn mgt-btn-reserve"
+              onClick={() => handleMakeReservation(selectedTable)}
+            >
+              Make Reservation
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };
