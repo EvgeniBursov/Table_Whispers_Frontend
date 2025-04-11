@@ -28,6 +28,8 @@ const ManagementSideBar = ({ activeView, setActiveView }) => {
     { id: 'customers', label: 'Customers', icon: '👥' },
     { id: 'menu', label: 'Menu', icon: '🍲' },
     { id: 'analytics', label: 'Analytics', icon: '📊' },
+    { id: 'surveys', label: 'Surveys', icon: '🗳️' },
+    { id: 'restaurantPage', label: 'Restaurant Page', icon: '🏠' }
   ];
 
   return (

@@ -12,6 +12,7 @@ import MngCustomers from '../../ManagementDashboardComponents/ManagementCustomer
 import MngTables from '../../ManagementTablesComponents/ManagementTables';
 import MngMenu from '../../ManagementDashboardComponents/ManagementRestaurantMenu';
 import MngAnalytics from '../../ManagementDashboardComponents/ManagementAnalytics';
+import MngSurveys from '../../ManagementDashboardComponents/ManagementSurveys';
 import { io } from 'socket.io-client';
 
 const RestaurantManagementDashboard = () => {
@@ -19,7 +20,7 @@ const RestaurantManagementDashboard = () => {
   const [activeView, setActiveView] = useState('reservations');
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [restaurantData, setRestaurantData] = useState(null);
-  const [reservations, setReservations] = useState([]);
+  const [reservations, setReservations] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showReservationForm, setShowReservationForm] = useState(false);
@@ -649,11 +650,16 @@ const RestaurantManagementDashboard = () => {
           <MngAnalytics restaurantId={restaurantId} />
         )}
 
+        {activeView === 'surveys' && (
+          <MngSurveys restaurantId={restaurantId} />
+        )}
+
+
 
         
         {/* Other sections (coming soon) */}
         {activeView !== 'reservations' && activeView !== 'customers' && activeView !== 'tables' &&
-        activeView !== 'menu' && activeView !== 'analytics' && (
+        activeView !== 'menu' && activeView !== 'analytics' && activeView !== 'surveys' && (
           <MngEmptyState 
             icon="🚧" 
             title={`${activeView.charAt(0).toUpperCase() + activeView.slice(1)} Management`} 

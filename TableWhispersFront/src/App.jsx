@@ -7,6 +7,7 @@ import RestaurantAuth from './pages/RestaurantAuth/RestaurantAuth'
 import HomePage from './pages/HomePage/HomePage'
 import RestaurantPage from './pages/RestaurantPage/RestaurantPage'
 import RestaurantDashboard from './pages/RestaurantManagementDashboard/RestaurantManagementDashboard'
+import SurveyPage from './pages/Survey/SurveyPage'
 
 // Wrapper component to use useLocation
 const AppContent = () => {
@@ -28,6 +29,7 @@ const AppContent = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/restaurant/:id" element={<RestaurantPage />} />
           <Route path="/restaurant/auth/" element={<RestaurantAuth />} /> 
+          <Route path="/survey" element={<SurveyPage />} />
         </Routes>
       </div>
     </>
