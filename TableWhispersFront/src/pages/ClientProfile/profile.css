@@ -951,3 +951,24 @@
     text-align: center;
   }
 }
+.view-bill-button {
+  padding: 8px 16px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.view-bill-button:hover {
+  background-color: #388e3c;
+}
+
+.bill-icon {
+  font-size: 16px;
+}

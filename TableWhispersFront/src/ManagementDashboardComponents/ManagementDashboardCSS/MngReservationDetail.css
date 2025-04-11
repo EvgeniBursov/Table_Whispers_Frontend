@@ -583,3 +583,59 @@
   outline: none;
   box-shadow: 0 0 0 2px rgba(74, 109, 167, 0.25);
 }
+
+/* Enhanced styles for the bill button */
+.mng-bill-btn {
+  background-color: #34a853 !important;
+  color: white !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.mng-bill-btn:hover {
+  background-color: #2d9249 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bill-icon {
+  font-size: 1.2em;
+  margin-right: 4px;
+}
+
+/* Add this to your existing CSS file */
+.mng-action-btn {
+  padding: 10px 16px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  margin-right: 10px;
+  min-width: 140px;
+}
+
+.mng-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* You can add these animations to make the bill button stand out */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(52, 168, 83, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 168, 83, 0);
+  }
+}
+
+.mng-bill-btn {
+  animation: pulse 2s infinite;
+}

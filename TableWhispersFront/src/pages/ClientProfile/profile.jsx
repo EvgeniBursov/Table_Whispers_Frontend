@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { assets } from "../../assets/assets";
+import BillModal  from "../../components/Bills/Bills";
 import { io } from 'socket.io-client';
 import "./profile.css";
 
@@ -24,6 +25,7 @@ const ClientProfile = () => {
   const [socketConnected, setSocketConnected] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [socket, setSocket] = useState(null);
+  const [selectedBill, setSelectedBill] = useState(null);
   
   // State variables for reservation editing
   const [editingReservation, setEditingReservation] = useState(null);
@@ -380,6 +382,13 @@ const ClientProfile = () => {
     setEditingReservation(null); // Cancel any ongoing edits when changing tabs
   };
 
+  const handleViewBill = (orderId) => {
+    setSelectedBill(orderId);
+  };
+
+  const handleCloseBill = () => {
+    setSelectedBill(null);
+  };
   // Function to start editing a specific reservation
   const startReservationEdit = (order) => {
     if (order.orderDate) {
@@ -1230,23 +1239,34 @@ const ClientProfile = () => {
                         </div>
                       )}
                     </div>
-                    {activeTab === "Planning" && (
-                      <div className="order-actions">
-                        {/* Add Edit button */}
+                    <div className="order-actions">
+                      {activeTab === "Planning" && (
+                        <>
+                          <button 
+                            onClick={() => startReservationEdit(order)} 
+                            className="edit-reservation-button"
+                          >
+                            Edit Reservation
+                          </button>
+                          <button 
+                            onClick={() => handleCancelOrder(order.order_id)} 
+                            className="cancel-order-button"
+                          >
+                            Cancel Order
+                          </button>
+                        </>
+                      )}
+                      
+                      {/* Add this button for Done and Seated orders */}
+                      {(activeTab === "Done" || activeTab === "Seated") && (
                         <button 
-                          onClick={() => startReservationEdit(order)} 
-                          className="edit-reservation-button"
+                          onClick={() => handleViewBill(order.order_id)} 
+                          className="view-bill-button"
                         >
-                          Edit Reservation
+                          <span className="bill-icon">🧾</span> View Bill
                         </button>
-                        <button 
-                          onClick={() => handleCancelOrder(order.order_id)} 
-                          className="cancel-order-button"
-                        >
-                          Cancel Order
-                        </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </>
                 )}
               </div>
@@ -1303,6 +1323,14 @@ const ClientProfile = () => {
           </button>
         </div>
       </div>
+
+      {selectedBill && (
+        <BillModal 
+          orderId={selectedBill} 
+          onClose={handleCloseBill} 
+          token={localStorage.getItem("token")}
+        />
+      )}
       
       {/* Toast container for real-time notifications */}
       <div id="toast-container" className="toast-container"></div>
