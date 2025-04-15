@@ -3,6 +3,7 @@ import { assets } from "../../assets/assets";
 import BillModal  from "../../components/Bills/Bills";
 import { io } from 'socket.io-client';
 import "./profile.css";
+import ChatWithRestaurant from '../../ChatManagement/ChatWithRestaurant';
 
 // Initialize Socket.io connection
 const socketUrl = 'http://localhost:5000';
@@ -26,6 +27,7 @@ const ClientProfile = () => {
   const [notifications, setNotifications] = useState([]);
   const [socket, setSocket] = useState(null);
   const [selectedBill, setSelectedBill] = useState(null);
+  const [activeChatRestaurant, setActiveChatRestaurant] = useState(null);
   
   // State variables for reservation editing
   const [editingReservation, setEditingReservation] = useState(null);
@@ -1240,33 +1242,39 @@ const ClientProfile = () => {
                       )}
                     </div>
                     <div className="order-actions">
-                      {activeTab === "Planning" && (
-                        <>
-                          <button 
-                            onClick={() => startReservationEdit(order)} 
-                            className="edit-reservation-button"
-                          >
-                            Edit Reservation
-                          </button>
-                          <button 
-                            onClick={() => handleCancelOrder(order.order_id)} 
-                            className="cancel-order-button"
-                          >
-                            Cancel Order
-                          </button>
-                        </>
-                      )}
-                      
-                      {/* Add this button for Done and Seated orders */}
-                      {(activeTab === "Done" || activeTab === "Seated") && (
+                    {activeTab === "Planning" && (
+                      <>
                         <button 
-                          onClick={() => handleViewBill(order.order_id)} 
-                          className="view-bill-button"
+                          onClick={() => startReservationEdit(order)} 
+                          className="edit-reservation-button"
                         >
-                          <span className="bill-icon">🧾</span> View Bill
+                          Edit Reservation
                         </button>
-                      )}
-                    </div>
+                        <button 
+                          onClick={() => handleCancelOrder(order.order_id)} 
+                          className="cancel-order-button"
+                        >
+                          Cancel Order
+                        </button>
+                        
+                        <button 
+                          onClick={() => setActiveChatRestaurant(order.order_id)} 
+                          className="chat-with-restaurant-button"
+                        >
+                          <span className="chat-icon">💬</span> Chat
+                        </button>
+                      </>
+                    )}
+                    
+                    {(activeTab === "Done" || activeTab === "Seated") && (
+                      <button 
+                        onClick={() => handleViewBill(order.order_id)} 
+                        className="view-bill-button"
+                      >
+                        <span className="bill-icon">🧾</span> View Bill
+                      </button>
+                    )}
+                  </div>
                   </>
                 )}
               </div>
@@ -1329,6 +1337,14 @@ const ClientProfile = () => {
           orderId={selectedBill} 
           onClose={handleCloseBill} 
           token={localStorage.getItem("token")}
+        />
+      )}
+
+      {activeChatRestaurant && (
+        <ChatWithRestaurant 
+          restaurant={activeChatRestaurant} 
+          customerEmail={email}
+          onClose={() => setActiveChatRestaurant(null)} 
         />
       )}
       

@@ -13,6 +13,7 @@ import MngTables from '../../ManagementTablesComponents/ManagementTables';
 import MngMenu from '../../ManagementDashboardComponents/ManagementRestaurantMenu';
 import MngAnalytics from '../../ManagementDashboardComponents/ManagementAnalytics';
 import MngSurveys from '../../ManagementDashboardComponents/ManagementSurveys';
+import MngChat from '../../ChatManagement/ChatManagement';
 import { io } from 'socket.io-client';
 
 const RestaurantManagementDashboard = () => {
@@ -654,12 +655,13 @@ const RestaurantManagementDashboard = () => {
           <MngSurveys restaurantId={restaurantId} />
         )}
 
+        {activeView === 'chat' && (
+          <MngChat restaurantId={restaurantId} />
+        )}
 
-
-        
         {/* Other sections (coming soon) */}
         {activeView !== 'reservations' && activeView !== 'customers' && activeView !== 'tables' &&
-        activeView !== 'menu' && activeView !== 'analytics' && activeView !== 'surveys' && (
+        activeView !== 'menu' && activeView !== 'analytics' && activeView !== 'surveys' && activeView !== 'chat' && (
           <MngEmptyState 
             icon="🚧" 
             title={`${activeView.charAt(0).toUpperCase() + activeView.slice(1)} Management`} 

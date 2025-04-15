@@ -59,13 +59,14 @@
     gap: 10px;
     margin-bottom: 0.5rem;
   }
-  
+  /* CHECK 
   .rating-number {
     font-size: 2.5rem;
     font-weight: bold;
     color: #333;
-  }
+  }*/
   
+
   .total-reviews {
     color: #777;
     font-size: 0.9rem;
