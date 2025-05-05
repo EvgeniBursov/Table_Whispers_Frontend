@@ -1,0 +1,232 @@
+/* MngNewReservationForm.css */
+
+.mng-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(4px);
+}
+
+.mng-new-reservation-form {
+  background-color: white;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: modal-appear 0.3s ease-out forwards;
+}
+
+@keyframes modal-appear {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mng-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.mng-form-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1a202c;
+  font-weight: 600;
+}
+
+.mng-form-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #64748b;
+  transition: color 0.2s ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.mng-form-close-btn:hover {
+  color: #e31837;
+}
+
+.mng-form-content {
+  padding: 0;
+}
+
+/* Override TableReservation styles to fit within our modal */
+.mng-form-content .table-reservation {
+  margin: 0;
+  box-shadow: none;
+  border-radius: 0 0 12px 12px;
+  padding: 20px;
+}
+
+.mng-form-content .booking-form {
+  gap: 20px;
+}
+
+.mng-form-content .find-table-btn {
+  background: #e31837;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 14px;
+  transition: background 0.3s;
+}
+
+.mng-form-content .find-table-btn:hover {
+  background: #c41530;
+}
+
+.mng-form-content .find-table-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Reservation confirmation styling */
+.mng-form-content .reservation-confirmation {
+  box-shadow: none;
+  margin: 0;
+  padding: 20px;
+}
+
+.mng-form-content .confirmation-header {
+  background-color: transparent;
+  border-bottom: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px 0 20px 0;
+}
+
+.mng-form-content .success-checkmark {
+  width: 60px;
+  height: 60px;
+  background-color: #4CAF50;
+  font-size: 28px;
+  margin-top: 15px;
+}
+
+.mng-form-content .confirmation-details {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.mng-form-content .detail-row {
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+  margin: 0;
+}
+
+.mng-form-content .detail-row:last-child {
+  border-bottom: none;
+}
+
+.mng-form-content .detail-label {
+  font-weight: 600;
+  color: #555;
+  width: 120px;
+}
+
+.mng-form-content .new-reservation-btn {
+  background-color: #e31837;
+  width: auto;
+  margin: 10px auto;
+  display: block;
+}
+
+/* Error message styling */
+.mng-form-content .error-message {
+  margin: 15px 20px 0;
+}
+
+/* Time slot styling */
+.mng-form-content .time-select option:disabled {
+  color: #ccc;
+}
+
+/* Availability warning */
+.mng-form-content .low-availability-warning {
+  margin: 5px 0 15px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .mng-new-reservation-form {
+    width: 95%;
+    max-height: 95vh;
+  }
+  
+  .mng-form-header h2 {
+    font-size: 1.1rem;
+  }
+  
+  .mng-form-content .table-reservation {
+    padding: 15px;
+  }
+  
+  .mng-form-content .booking-form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .mng-form-content .detail-row {
+    flex-direction: column;
+  }
+  
+  .mng-form-content .detail-label {
+    width: 100%;
+    margin-bottom: 5px;
+  }
+}
+
+/* Small mobile phones */
+@media (max-width: 374px) {
+  .mng-form-content .find-table-btn {
+    font-size: 14px;
+    padding: 12px;
+  }
+  
+  .mng-form-content .confirmation-header h2 {
+    font-size: 18px;
+  }
+}
+
+/* Fix iOS date input appearance */
+@supports (-webkit-touch-callout: none) {
+  .mng-form-content input[type="date"] {
+    min-height: 40px;
+  }
+  
+  .mng-new-reservation-form {
+    -webkit-transform: translateZ(0);
+  }
+}
+
+/* Disable body scrolling when modal is open */
+body.modal-open {
+  overflow: hidden;
+}

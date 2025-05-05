@@ -1,0 +1,131 @@
+/* CustomerReservationHistory.css */
+.crh-container {
+    margin-top: 0;
+    margin-bottom: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+  }
+  
+  .crh-container h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    color: #333;
+  }
+  
+  .crh-loading,
+  .crh-error,
+  .crh-empty {
+    padding: 12px;
+    text-align: center;
+    background-color: #f9f9f9;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+  
+  .crh-error {
+    color: #e53935;
+    background-color: #ffebee;
+  }
+  
+  /* Table styles */
+  .crh-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+    font-size: 14px;
+  }
+  
+  .crh-table th {
+    background-color: #f8f9fa;
+    padding: 8px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #dee2e6;
+  }
+  
+  .crh-table td {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .crh-table-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .crh-table-row:hover {
+    background-color: #f1f5f9;
+  }
+  
+  /* Pagination styles */
+  .crh-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+  }
+  
+  .crh-pagination-btn {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s ease;
+  }
+  
+  .crh-pagination-btn:hover:not(:disabled) {
+    background-color: #e0e0e0;
+  }
+  
+  .crh-pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .crh-pagination-info {
+    font-size: 13px;
+    color: #666;
+  }
+  
+  /* Status badges */
+  .crh-status-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+  
+  .crh-status-confirmed {
+    background-color: #c6f6d5;
+    color: #2f855a;
+  }
+  
+  .crh-status-pending {
+    background-color: #bee3f8;
+    color: #2b6cb0;
+  }
+  
+  .crh-status-cancelled {
+    background-color: #fed7d7;
+    color: #c53030;
+  }
+  
+  .crh-status-completed {
+    background-color: #e9d8fd;
+    color: #6b46c1;
+  }
+  
+  .crh-status-seated {
+    background-color: #fbd38d;
+    color: #c05621;
+  }

@@ -41,7 +41,7 @@ const RestaurantAuth = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:7000/${currState === "Sign Up" ? 'resRegister' : 'resLogin'}`,
+        `http://localhost:5000/${currState === "Sign Up" ? 'resRegister' : 'resLogin'}`,
         {
           method: 'POST',
           headers: {

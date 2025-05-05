@@ -1,0 +1,641 @@
+.mng-reservation-detail-container {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  background-color: #f9fafb;
+}
+
+.mng-detail-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.mng-back-button {
+  background: none;
+  border: none;
+  color: #4a6da7;
+  cursor: pointer;
+  font-size: 15px;
+  margin-right: 16px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.mng-back-button:hover {
+  background-color: #edf2f7;
+}
+
+.mng-detail-header h2 {
+  font-size: 24px;
+  color: #2d3748;
+  font-weight: 600;
+  margin: 0;
+}
+
+.mng-detail-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.mng-detail-section {
+  background-color: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.mng-detail-section h3 {
+  margin-bottom: 20px;
+  font-size: 18px;
+  color: #2d3748;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-weight: 600;
+}
+
+.mng-detail-row {
+  display: flex;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f4f8;
+}
+
+.mng-detail-row:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.mng-detail-label {
+  width: 140px;
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 14px;
+}
+
+.mng-detail-value {
+  flex-grow: 1;
+  color: #2d3748;
+  font-size: 14px;
+}
+
+.mng-detail-notes {
+  padding: 12px;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  font-style: italic;
+  color: #4a5568;
+  min-height: 80px;
+  font-size: 14px;
+  border: 1px solid #e2e8f0;
+}
+
+.mng-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.mng-action-btn {
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mng-edit-btn {
+  background-color: #4a6da7;
+  color: white;
+}
+
+.mng-edit-btn:hover {
+  background-color: #3d5a8a;
+}
+
+.mng-cancel-btn {
+  background-color: #e53e3e;
+  color: white;
+}
+
+.mng-cancel-btn:hover {
+  background-color: #c53030;
+}
+
+.mng-confirm-btn {
+  background-color: #38a169;
+  color: white;
+}
+
+.mng-confirm-btn:hover {
+  background-color: #2f855a;
+}
+
+.mng-complete-btn {
+  background-color: #4299e1;
+  color: white;
+}
+
+.mng-complete-btn:hover {
+  background-color: #3182ce;
+}
+
+.mng-customer-image-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.mng-customer-profile-image {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.mng-customer-profile-placeholder {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background-color: #edf2f7;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 28px;
+  font-weight: bold;
+  color: #4a6da7;
+  border: 3px solid #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.mng-status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.mng-status-confirmed {
+  background-color: #c6f6d5;
+  color: #2f855a;
+}
+
+.mng-status-pending {
+  background-color: #bee3f8;
+  color: #2b6cb0;
+}
+
+.mng-status-cancelled {
+  background-color: #fed7d7;
+  color: #c53030;
+}
+
+.mng-status-completed {
+  background-color: #e9d8fd;
+  color: #6b46c1;
+}
+
+.mng-status-seated {
+  background-color: #fbd38d;
+  color: #c05621;
+}
+
+.mng-seated-btn {
+  background-color: #dd6b20;
+  color: white;
+}
+
+.mng-seated-btn:hover {
+  background-color: #c05621;
+}
+
+/* Edit form styles */
+.mng-edit-form {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #e5e7eb;
+}
+
+.mng-form-group {
+  margin-bottom: 16px;
+}
+
+.mng-form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.mng-form-group input,
+.mng-form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: white;
+  transition: all 0.2s;
+}
+
+.mng-form-group input:focus,
+.mng-form-group select:focus {
+  border-color: #4a6da7;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(74, 109, 167, 0.25);
+}
+
+.mng-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.mng-btn {
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  min-width: 100px;
+}
+
+.mng-save-btn {
+  background-color: #4a6da7;
+  color: white;
+}
+
+.mng-save-btn:hover {
+  background-color: #3d5a8a;
+}
+
+.mng-save-btn:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+
+.mng-cancel-btn {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.mng-cancel-btn:hover {
+  background-color: #e5e7eb;
+}
+
+.mng-form-error {
+  padding: 12px;
+  margin-bottom: 16px;
+  background-color: #fed7d7;
+  border-left: 4px solid #e53e3e;
+  color: #c53030;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Allergies list styling */
+.mng-allergies-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mng-allergy-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.mng-allergy-name {
+  margin-right: 8px;
+}
+
+.mng-allergy-severity {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.mng-severity-mild {
+  background-color: #fefcbf;
+  color: #d69e2e;
+}
+
+.mng-severity-moderate {
+  background-color: #fed7d7;
+  color: #e53e3e;
+}
+
+.mng-severity-severe {
+  background-color: #feb2b2;
+  color: #c53030;
+}
+
+/* Disable editing for cancelled or completed reservations */
+.mng-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .mng-detail-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .mng-detail-actions {
+    flex-direction: column;
+  }
+  
+  .mng-action-btn {
+    width: 100%;
+  }
+  
+  .mng-edit-form {
+    padding: 16px;
+  }
+  
+  .mng-form-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .mng-btn {
+    width: 100%;
+  }
+  
+  .mng-detail-row {
+    flex-direction: column;
+  }
+  
+  .mng-detail-label {
+    width: 100%;
+    margin-bottom: 4px;
+  }
+}
+
+.mng-history-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.mng-history-btn {
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  margin-bottom: 15px;
+  width: 100%;
+  text-align: center;
+}
+
+.mng-history-btn:hover {
+  background-color: #e0e0e0;
+}
+
+/* Make sure the history component has proper spacing */
+.crh-container {
+  margin-top: 15px;
+}
+
+.mng-history-toggle {
+  margin-bottom: 15px;
+}
+
+.mng-history-toggle-btn {
+  width: 100%;
+  background-color: #f8f9fa;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 14px;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mng-history-toggle-btn:hover {
+  background-color: #f3f4f6;
+}
+
+.mng-history-container {
+  margin-bottom: 24px;
+}
+
+.mng-history-title {
+  font-size: 16px;
+  color: #4b5563;
+  margin: 0 0 10px 0;
+  font-weight: 600;
+}
+
+.mng-reservation-details {
+  margin-top: 5px;
+}
+
+/* CustomerReservationHistory.css adjustments */
+.crh-container {
+  margin: 0;
+  padding: 0;
+}
+
+.crh-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.crh-table th {
+  background-color: #f8f9fa;
+  padding: 8px;
+  text-align: left;
+  font-weight: 500;
+  color: #4b5563;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
+}
+
+.crh-table td {
+  padding: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
+}
+
+.crh-table-row:hover {
+  background-color: #f9fafb;
+  cursor: pointer;
+}
+
+.crh-table-row.crh-status-seated {
+  background-color: #fef3c7;
+}
+
+.crh-status-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.crh-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  font-size: 13px;
+}
+
+.crh-pagination-btn {
+  background-color: #f8f9fa;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.crh-pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.crh-pagination-info {
+  color: #6b7280;
+}
+
+/* Add these styles to your MngReservationDetail.css file */
+
+.mng-table-number {
+  font-weight: 500;
+  color: #3498db;
+  background-color: #e6f7ff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.mng-table-not-assigned {
+  font-style: italic;
+  color: #999;
+  font-size: 13px;
+}
+
+.mng-form-help-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #777;
+  font-style: italic;
+}
+
+/* Adjust the form group spacing for the new table number field */
+.mng-form-group {
+  margin-bottom: 20px;
+}
+
+/* Make the table number input stand out a bit */
+.mng-form-group input[type="text"] {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: white;
+  transition: all 0.2s;
+}
+
+.mng-form-group input[type="text"]:focus {
+  border-color: #4a6da7;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(74, 109, 167, 0.25);
+}
+
+/* Enhanced styles for the bill button */
+.mng-bill-btn {
+  background-color: #34a853 !important;
+  color: white !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.mng-bill-btn:hover {
+  background-color: #2d9249 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bill-icon {
+  font-size: 1.2em;
+  margin-right: 4px;
+}
+
+/* Add this to your existing CSS file */
+.mng-action-btn {
+  padding: 10px 16px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  margin-right: 10px;
+  min-width: 140px;
+}
+
+.mng-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* You can add these animations to make the bill button stand out */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(52, 168, 83, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 168, 83, 0);
+  }
+}
+
+.mng-bill-btn {
+  animation: pulse 2s infinite;
+}

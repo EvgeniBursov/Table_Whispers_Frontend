@@ -1,0 +1,420 @@
+.mng-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background-color: white;
+  border-bottom: 1px solid #e0e0e0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mng-date-time {
+  display: flex;
+  flex-direction: column;
+}
+
+.mng-date {
+  font-size: 14px;
+  color: #888;
+}
+
+.mng-time {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.mng-restaurant-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mng-restaurant-name {
+  font-size: 18px;
+  color: #333;
+  font-weight: 500;
+  margin: 0;
+}
+
+.mng-search-container {
+  flex-grow: 1;
+  max-width: 400px;
+  margin: 0 20px;
+}
+
+.mng-search-input {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 14px;
+  outline: none;
+}
+
+.mng-search-input:focus {
+  border-color: #3498db;
+}
+
+.mng-header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.mng-user-profile {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-right: 20px;
+}
+
+.mng-avatar {
+  width: 35px;
+  height: 35px;
+  background-color: #e0e0e0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+}
+
+.mng-user-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* New Logout Button Styles */
+.mng-logout-btn {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 15px;
+  background-color: #f8f8f8;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+}
+
+.mng-logout-btn:hover {
+  background-color: #ffebeb;
+  border-color: #ffcece;
+  color: #e74c3c;
+}
+
+.mng-logout-icon {
+  font-size: 16px;
+  margin-right: 6px;
+}
+
+.mng-logout-text {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Notification System Styles */
+.mng-notification-center {
+  position: relative;
+  margin-right: 20px;
+}
+
+.mng-notification-bell {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  position: relative;
+  padding: 5px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  transition: background-color 0.2s;
+}
+
+.mng-notification-bell:hover {
+  background-color: #eaecef;
+}
+
+.mng-notification-bell.has-new {
+  animation: bell-ring 1s ease-in-out;
+}
+
+@keyframes bell-ring {
+  0% { transform: rotate(0); }
+  10% { transform: rotate(15deg); }
+  20% { transform: rotate(-15deg); }
+  30% { transform: rotate(10deg); }
+  40% { transform: rotate(-10deg); }
+  50% { transform: rotate(5deg); }
+  60% { transform: rotate(-5deg); }
+  70% { transform: rotate(0); }
+  100% { transform: rotate(0); }
+}
+
+.mng-notification-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #e74c3c;
+  color: white;
+  font-size: 12px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  font-weight: bold;
+}
+
+.mng-notifications-dropdown {
+  position: absolute;
+  top: 45px;
+  right: 0;
+  width: 350px;
+  max-height: 450px;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.mng-notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f8f9fa;
+}
+
+.mng-notifications-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.mng-clear-notifications {
+  background: none;
+  border: none;
+  color: #3498db;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.mng-clear-notifications:hover {
+  background-color: #eaf4fd;
+}
+
+.mng-notifications-content {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 350px;
+}
+
+.mng-notification-group {
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+
+.mng-notification-group h4 {
+  margin: 0;
+  padding: 10px 15px 5px;
+  font-size: 14px;
+  color: #666;
+  font-weight: 600;
+}
+
+.mng-notification-item {
+  padding: 8px 15px;
+  display: flex;
+  align-items: flex-start;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.mng-notification-item:hover {
+  background-color: #f8f9fa;
+}
+
+.mng-notification-icon {
+  margin-right: 10px;
+  font-size: 16px;
+}
+
+.mng-notification-info {
+  flex: 1;
+}
+
+.mng-notification-message {
+  font-size: 13px;
+  color: #333;
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.mng-notification-time {
+  font-size: 11px;
+  color: #888;
+}
+
+.mng-no-notifications {
+  padding: 25px 15px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+/* Notification Types */
+.mng-notification-item.new .mng-notification-icon {
+  color: #2ecc71;
+}
+
+.mng-notification-item.status .mng-notification-icon {
+  color: #f39c12;
+}
+
+.mng-notification-item.cancellation .mng-notification-icon {
+  color: #e74c3c;
+}
+
+.mng-notification-item.change .mng-notification-icon {
+  color: #3498db;
+}
+
+.mng-notification-item.table .mng-notification-icon {
+  color: #9b59b6;
+}
+
+.mng-notification-item.error .mng-notification-icon {
+  color: #e74c3c;
+}
+
+/* Real-time Connection Status */
+.mng-realtime-status {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 15px;
+  background-color: #f8f9fa;
+  margin-right: 15px;
+}
+
+.mng-realtime-status.connected {
+  color: #27ae60;
+}
+
+.mng-realtime-status.disconnected {
+  color: #e74c3c;
+}
+
+.mng-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.mng-realtime-status.connected .mng-status-indicator {
+  background-color: #27ae60;
+  box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.2);
+  animation: pulse 2s infinite;
+}
+
+.mng-realtime-status.disconnected .mng-status-indicator {
+  background-color: #e74c3c;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(39, 174, 96, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
+}
+
+/* Responsive styles */
+@media screen and (max-width: 992px) {
+  .mng-header {
+    flex-wrap: wrap;
+    padding: 10px 20px;
+  }
+  
+  .mng-restaurant-info {
+    order: 1;
+    margin-bottom: 10px;
+    flex: 1 1 100%;
+    align-items: flex-start;
+  }
+  
+  .mng-date-time {
+    order: 2;
+    flex: 0 0 auto;
+  }
+  
+  .mng-search-container {
+    order: 4;
+    flex: 1 1 100%;
+    max-width: 100%;
+    margin: 10px 0 0 0;
+  }
+  
+  .mng-header-actions {
+    order: 3;
+    margin-left: auto;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .mng-header {
+    padding: 10px 15px;
+  }
+  
+  .mng-notification-center {
+    margin-right: 10px;
+  }
+  
+  .mng-user-profile {
+    margin-right: 10px;
+  }
+  
+  .mng-user-name {
+    display: none;
+  }
+  
+  .mng-logout-text {
+    display: none;
+  }
+  
+  .mng-logout-btn {
+    padding: 8px;
+  }
+  
+  .mng-logout-icon {
+    margin-right: 0;
+  }
+  
+  .mng-notifications-dropdown {
+    width: 300px;
+    right: -50px;
+  }
+  
+  .mng-notifications-dropdown:before {
+    right: 62px;
+  }
+  
+  .mng-realtime-status {
+    display: none;
+  }
+}

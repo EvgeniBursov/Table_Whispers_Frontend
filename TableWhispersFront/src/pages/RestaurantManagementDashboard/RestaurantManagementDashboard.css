@@ -1,0 +1,170 @@
+.mng-dashboard-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw; /* Full width of viewport */
+  overflow: hidden;
+  position: absolute; /* Position absolute to take up entire screen */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.mng-main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #f5f7fa;
+  overflow: hidden;
+  position: relative;
+}
+
+.mng-loading, .mng-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  font-size: 18px;
+  color: #555;
+}
+
+.mng-error {
+  color: #e74c3c;
+}
+
+.mng-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Allergies styling */
+.mng-allergies-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mng-allergy-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.mng-allergy-name {
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.mng-allergy-severity {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.mng-severity-high {
+  background-color: #ffe6e6;
+  color: #e74c3c;
+}
+
+.mng-severity-medium {
+  background-color: #fff7e6;
+  color: #f39c12;
+}
+
+.mng-severity-low {
+  background-color: #e6f7ee;
+  color: #2ecc71;
+}
+
+/* Responsive styles */
+@media screen and (max-width: 1024px) {
+  .mng-sidebar {
+    width: 180px;
+  }
+  
+  .mng-logo {
+    font-size: 24px;
+  }
+  
+  .mng-reservation-filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .mng-detail-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .mng-form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .mng-dashboard-container {
+    flex-direction: column;
+  }
+  
+  .mng-sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 60px;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  
+  .mng-sidebar.expanded {
+    max-height: 300px;
+  }
+  
+  .mng-menu-items {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .mng-menu-item {
+    width: auto;
+  }
+  
+  .mng-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  
+  .mng-search-container {
+    max-width: 100%;
+    margin: 10px 0;
+  }
+  
+  .mng-header-actions {
+    justify-content: space-between;
+  }
+  
+  .mng-reservation-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .mng-detail-actions {
+    flex-direction: column;
+  }
+  
+  .mng-new-reservation-container {
+    width: 95%;
+    max-height: 95vh;
+  }
+}

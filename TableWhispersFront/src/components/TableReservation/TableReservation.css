@@ -1,126 +1,501 @@
 /* components/TableReservation/TableReservation.css */
 
 .table-reservation {
-    width: 100%;
-    max-width: 800px;
-    margin: 30px auto;
-    padding: 20px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.booking-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.input-group {
+  flex: 1;
+  margin-bottom: 8px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 6px;
+  color: #333;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.input-group select,
+.input-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 15px;
+  -webkit-appearance: none; /* Remove default styling on iOS */
+  appearance: none;
+  background-color: #fff;
+}
+
+/* Custom select arrow */
+.input-group select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  padding-right: 30px;
+}
+
+.find-table-btn {
+  width: 100%;
+  padding: 14px;
+  background: #e31837;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+  text-transform: uppercase;
+  margin-top: 10px;
+  -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+}
+
+.find-table-btn:hover {
+  background: #c41530;
+}
+
+.find-table-btn:active {
+  transform: scale(0.98);
+}
+
+.find-table-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Guest information styling */
+.guest-info-section {
+  margin-top: 8px;
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.guest-info-section h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 16px;
+  color: #333;
+}
+
+.guest-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+/* Error message styling */
+.error-message {
+  margin-top: 12px;
+  padding: 10px;
+  background-color: #ffeeee;
+  border-left: 4px solid #e31837;
+  color: #c41530;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Reservation Confirmation Styling */
+.reservation-confirmation {
+  width: 100%;
+  max-width: 600px;
+  margin: 20px auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.confirmation-header {
+  background-color: #f9f9f9;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+}
+
+.confirmation-header h2 {
+  color: #333;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.success-checkmark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: #4CAF50;
+  color: white;
+  font-size: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.confirmation-details {
+  padding: 16px;
+}
+
+.detail-row {
+  display: flex;
+  margin: 12px 0;
+  align-items: baseline;
+}
+
+.detail-label {
+  width: 100px;
+  font-weight: 600;
+  color: #555;
+  font-size: 14px;
+}
+
+.detail-value {
+  color: #333;
+  font-size: 14px;
+}
+
+.new-reservation-btn {
+  background-color: #e31837;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 24px;
+  margin: 10px 16px 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+  display: block;
+  width: calc(100% - 32px);
+  text-align: center;
+}
+
+.new-reservation-btn:hover {
+  background-color: #c41530;
+}
+
+.new-reservation-btn:active {
+  transform: scale(0.98);
+}
+
+/* Availability warning */
+.low-availability-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 10px 12px;
+  border-radius: 4px;
+  margin: 10px 0;
+  font-size: 13px;
+  border-left: 4px solid #ffc107;
+}
+
+/* Time select styles */
+.time-select {
+  width: 100%;
+}
+
+/* Availability classes for time options */
+.high-availability {
+  color: #28a745;
+}
+
+.medium-availability {
+  color: #fd7e14;
+}
+
+.low-availability {
+  color: #dc3545;
+}
+
+/* Email field styling */
+.email-field {
+  position: relative;
+}
+
+.email-note {
+  position: absolute;
+  right: 8px;
+  top: 40px;
+  font-size: 11px;
+  color: #6c757d;
+  background: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Enhanced mobile responsiveness */
+@media (max-width: 767px) {
+  .table-reservation {
+    padding: 12px;
+    margin: 10px auto;
   }
   
-  .booking-form {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    align-items: end;
-  }
-  
-  .form-inputs {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-  }
-  
-  .input-group {
-    flex: 1;
+  .booking-form-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
   
   .input-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: #333;
-    font-weight: 500;
+    font-size: 13px;
+    margin-bottom: 4px;
   }
   
   .input-group select,
   .input-group input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 16px;
+    padding: 10px;
+    font-size: 14px;
   }
   
   .find-table-btn {
-    width: 100%;
-    padding: 15px;
-    background: #e31837;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 18px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.3s;
-    text-transform: uppercase;
-  }
-  
-  .find-table-btn:hover {
-    background: #c41530;
-  }
-  
-  /* Time slots styling */
-  .available-times {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-  }
-  
-  .available-times h3 {
-    font-size: 20px;
-    margin-bottom: 15px;
-  }
-  
-  .date-info {
-    color: #666;
-    margin-bottom: 20px;
-  }
-  
-  .seating-areas {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .area h4 {
-    margin-bottom: 15px;
-    font-size: 18px;
-    color: #333;
-  }
-  
-  .time-slots {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 10px;
-  }
-  
-  .time-slot {
     padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background: white;
+    font-size: 15px;
+  }
+  
+  .confirmation-header {
+    flex-direction: column;
     text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
+    gap: 12px;
+    padding: 12px;
   }
   
-  .time-slot:not(.unavailable):hover {
-    border-color: #e31837;
+  .detail-row {
+    flex-direction: column;
+    margin-bottom: 16px;
   }
   
-  .time-slot .time {
-    font-weight: 500;
+  .detail-label {
+    width: 100%;
     margin-bottom: 4px;
   }
   
-  .time-slot .status {
-    font-size: 14px;
-    color: #666;
+  .guest-info-grid {
+    grid-template-columns: 1fr;
   }
   
-  .time-slot.unavailable {
-    opacity: 0.5;
-    cursor: not-allowed;
+  .guest-info-section {
+    padding: 12px;
   }
+  
+  .confirmation-details {
+    padding: 12px;
+  }
+}
+
+/* Small mobile phones */
+@media (max-width: 374px) {
+  .input-group select,
+  .input-group input {
+    padding: 8px;
+    font-size: 14px;
+  }
+  
+  .find-table-btn {
+    font-size: 14px;
+  }
+  
+  .confirmation-header h2 {
+    font-size: 18px;
+  }
+  
+  .detail-label, 
+  .detail-value {
+    font-size: 13px;
+  }
+}
+
+/* Fix iOS date input appearance */
+@supports (-webkit-touch-callout: none) {
+  input[type="date"] {
+    min-height: 40px;
+  }
+}
+
+/* No times message */
+.no-times-message {
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #ddd;
+  color: #6c757d;
+  text-align: center;
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+/* Custom styling for reservation modal */
+.reservation-modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 10px;
+}
+
+.reservation-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  z-index: -1;
+}
+
+.reservation-modal-content {
+  background-color: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: modal-slide-up 0.3s ease-out forwards;
+}
+
+@keyframes modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reservation-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.reservation-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.reservation-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: #666;
+  cursor: pointer;
+}
+
+.reservation-modal-body {
+  padding: 0;
+}
+
+.reservation-modal-body .table-reservation {
+  box-shadow: none;
+  margin: 0;
+  border-radius: 0;
+}
+
+/* Fix iOS shadow bug */
+@supports (-webkit-overflow-scrolling: touch) {
+  .reservation-modal-content {
+    -webkit-transform: translateZ(0);
+  }
+}
+
+/* Disable body scrolling when modal is open */
+body.modal-open {
+  overflow: hidden;
+}
+
+.table-simple-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 10px 5px;
+}
+
+.table-simple-card {
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.table-simple-card:hover {
+  border-color: #e31837;
+  transform: translateY(-2px);
+}
+
+.table-simple-card.selected {
+  border-color: #e31837;
+  background-color: #fff5f5;
+  box-shadow: 0 2px 4px rgba(227, 24, 55, 0.2);
+}
+
+.table-number {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.table-simple-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #666;
+}
+
+.table-shape-label {
+  text-transform: capitalize;
+}
+
+.table-seats-label {
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .table-simple-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

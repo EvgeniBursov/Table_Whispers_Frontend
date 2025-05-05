@@ -1,0 +1,365 @@
+/* ManagementCustomers.css */
+.mgc-container {
+    padding: 24px;
+    background-color: #f9fafb;
+    height: 100%;
+    overflow-y: auto;
+  }
+  
+  .mgc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .mgc-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+  }
+  
+  .mgc-stats {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .mgc-stat-item {
+    background-color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    text-align: center;
+    min-width: 120px;
+  }
+  
+  .mgc-stat-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: #4a6da7;
+  }
+  
+  .mgc-stat-label {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #6b7280;
+  }
+  
+  .mgc-filters {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    gap: 12px;
+  }
+  
+  .mgc-search {
+    flex: 1;
+    min-width: 250px;
+  }
+  
+  .mgc-search input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  
+  .mgc-filter-controls {
+    display: flex;
+    gap: 16px;
+  }
+  
+  .mgc-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .mgc-filter-group label {
+    font-size: 14px;
+    color: #4b5563;
+  }
+  
+  .mgc-filter-group select {
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: white;
+  }
+  
+  .mgc-sort-dir {
+    padding: 6px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background-color: white;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .mgc-sort-dir:hover {
+    background-color: #f9fafb;
+  }
+  
+  .mgc-customers-table {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+  }
+  
+  .mgc-customers-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .mgc-customers-table th {
+    background-color: #f8f9fa;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #4b5563;
+    font-size: 14px;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .mgc-customers-table th.active {
+    color: #4a6da7;
+  }
+  
+  .mgc-customers-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+    color: #1f2937;
+  }
+  
+  .mgc-customer-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .mgc-customer-row:hover {
+    background-color: #f9fafb;
+  }
+  
+  .mgc-customer-row.registered {
+    /* Optional styling for registered users */
+  }
+  
+  .mgc-customer-row.guest {
+    background-color: #fafcff;
+  }
+  
+  .mgc-customer-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .mgc-customer-initial {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #4a6da7;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .mgc-visits-cell {
+    font-weight: 600;
+    text-align: center;
+  }
+  
+  .mgc-customer-type {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .mgc-customer-type.registered {
+    background-color: #e0f2fe;
+    color: #0369a1;
+  }
+  
+  .mgc-customer-type.guest {
+    background-color: #f1f5f9;
+    color: #64748b;
+  }
+  
+  .mgc-no-results {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    padding: 30px !important;
+  }
+  
+  .mgc-loading, .mgc-error {
+    padding: 30px;
+    text-align: center;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  .mgc-error {
+    color: #dc2626;
+  }
+  
+  /* Customer details modal */
+  .mgc-customer-details-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .mgc-customer-details {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    width: 600px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .mgc-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .mgc-detail-header h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+  }
+  
+  .mgc-close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #6b7280;
+    cursor: pointer;
+  }
+  
+  .mgc-close-btn:hover {
+    color: #4b5563;
+  }
+  
+  .mgc-detail-content {
+    padding: 24px;
+  }
+  
+  .mgc-detail-section {
+    margin-bottom: 24px;
+  }
+  
+  .mgc-detail-section:last-child {
+    margin-bottom: 0;
+  }
+  
+  .mgc-detail-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #4b5563;
+    margin: 0 0 16px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f4f8;
+  }
+  
+  .mgc-customer-avatar {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  
+  .mgc-customer-initials {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background-color: #4a6da7;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  
+  .mgc-detail-row {
+    display: flex;
+    margin-bottom: 12px;
+  }
+  
+  .mgc-detail-label {
+    width: 120px;
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 14px;
+  }
+  
+  .mgc-detail-value {
+    flex-grow: 1;
+    color: #1f2937;
+    font-size: 14px;
+  }
+  
+  .mgc-allergies-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .mgc-allergy-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  
+  .mgc-allergy-name {
+    margin-right: 10px;
+  }
+  
+  .mgc-allergy-severity {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .mgc-severity-mild {
+    background-color: #fef9c3;
+    color: #854d0e;
+  }
+  
+  .mgc-severity-moderate {
+    background-color: #fef2f2;
+    color: #b91c1c;
+  }
+  
+  .mgc-severity-severe {
+    background-color: #fee2e2;
+    color: #991b1b;
+  }

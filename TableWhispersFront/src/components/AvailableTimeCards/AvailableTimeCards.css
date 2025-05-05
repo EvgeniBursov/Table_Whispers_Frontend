@@ -1,0 +1,92 @@
+/* AvailableTimeCards.css */
+.available-time-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.time-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 15px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 90px;
+}
+
+.time-card:hover {
+  border-color: #e31837;
+  background: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(227, 24, 55, 0.1);
+}
+
+.time-card.selected {
+  background: #fff;
+  border-color: #e31837;
+  box-shadow: 0 2px 8px rgba(227, 24, 55, 0.15);
+}
+
+.time-card.last-table {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.time-card .time {
+  font-weight: 600;
+  font-size: 16px;
+  color: #1a202c;
+  margin-bottom: 4px;
+}
+
+.time-card .table-info {
+  font-size: 13px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.time-card .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+  display: inline-block;
+}
+
+.time-card .dot.bar-dot {
+  background-color: #6366f1;
+}
+
+.time-card.last-table .dot {
+  background-color: #f59e0b;
+}
+
+.no-times-available {
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* Make time cards responsive */
+@media (max-width: 768px) {
+  .time-card {
+    min-width: calc(50% - 10px);
+  }
+}
+
+@media (max-width: 480px) {
+  .time-card {
+    min-width: calc(33.333% - 10px);
+  }
+}
