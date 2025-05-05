@@ -304,3 +304,97 @@
       padding: 0.75rem 1.25rem;
     }
   }
+  .login-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 16px 0;
+    color: #6b7280;
+    font-size: 14px;
+  }
+  
+  .login-divider::before,
+  .login-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .login-divider span {
+    margin: 0 10px;
+    padding: 0 10px;
+    background-color: #fff;
+    position: relative;
+    top: 0.5em;
+  }
+  
+  /* Google sign-in container */
+  .google-signin-container {
+    display: flex;
+    justify-content: center;
+    margin: 16px 0;
+    min-height: 42px;
+  }
+  
+  /* Google processing state */
+  .google-processing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: #f3f4f6;
+    width: 100%;
+    max-width: 280px;
+  }
+  
+  .google-processing p {
+    margin: 0;
+    color: #4b5563;
+    font-size: 14px;
+  }
+  
+  /* Loader animation */
+  .loader {
+    border: 3px solid #f3f4f6;
+    border-radius: 50%;
+    border-top: 3px solid #3b82f6;
+    width: 18px;
+    height: 18px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Style adjustments for the Google button itself */
+  #google-signin-button {
+    width: 100%;
+    max-width: 280px;
+  }
+  
+  #google-signin-button > div {
+    width: 100% !important;
+  }
+  
+  /* Verified email display */
+  .verified-email {
+    font-size: 14px;
+    color: #4b5563;
+    margin-bottom: 10px;
+    padding: 8px;
+    background-color: #f3f4f6;
+    border-radius: 4px;
+    text-align: center;
+  }
+  
+  /* Small devices (landscape phones and up) */
+  @media (max-width: 576px) {
+    .google-signin-container,
+    #google-signin-button {
+      max-width: 100%;
+    }
+  }

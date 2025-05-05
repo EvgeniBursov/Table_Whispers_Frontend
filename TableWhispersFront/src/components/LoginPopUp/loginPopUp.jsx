@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './loginPopUp.css';
 import { assets } from '../../assets/assets';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const LoginPopUp = ({ setShowLogin }) => {
   const [currState, setCurrState] = useState("Sign Up");
@@ -24,6 +26,107 @@ const LoginPopUp = ({ setShowLogin }) => {
   const [verifiedCode, setVerifiedCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  
+  // Google Sign-In state
+  const [isGoogleScriptLoaded, setIsGoogleScriptLoaded] = useState(false);
+  const [isProcessingGoogle, setIsProcessingGoogle] = useState(false);
+
+  // Load Google Sign-In script
+  useEffect(() => {
+    // Only load the script if it's not already in the document
+    if (!document.querySelector('script#google-client')) {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.id = 'google-client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        setIsGoogleScriptLoaded(true);
+      };
+      document.body.appendChild(script);
+
+      return () => {
+        // Clean up the script when component unmounts
+        if (document.querySelector('script#google-client')) {
+          document.body.removeChild(script);
+        }
+      };
+    } else {
+      setIsGoogleScriptLoaded(true);
+    }
+  }, []);
+
+  // Initialize Google Sign-In once script is loaded
+  useEffect(() => {
+    if (isGoogleScriptLoaded && window.google) {
+      const CLIENT_ID = import.meta.env.GOOGLE_AUTH;
+      
+      window.google.accounts.id.initialize({
+        client_id: CLIENT_ID,
+        callback: handleGoogleResponse,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+      
+      // Render the button
+      window.google.accounts.id.renderButton(
+        document.getElementById('google-signin-button'),
+        {
+          theme: 'outline',
+          size: 'large',
+          text: 'continue_with',
+          width: 280,
+          locale: 'en',
+        }
+      );
+    }
+  }, [isGoogleScriptLoaded]);
+
+  const handleGoogleResponse = async (response) => {
+    if (response.credential) {
+      setIsProcessingGoogle(true);
+      try {
+        // Send the ID token to your backend
+        const backendResponse = await fetch('http://localhost:5000/google_auth', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            token: response.credential,
+            user_type: 'Client'
+          }),
+        });
+
+        const data = await backendResponse.json();
+
+        if (!backendResponse.ok) {
+          throw new Error(data.error || 'Google authentication failed');
+        }
+
+        // Handle successful authentication
+        localStorage.setItem("token", data.token);
+        
+        try {
+          const base64Url = data.token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const payload = JSON.parse(window.atob(base64));
+          console.log("[AUTH] User logged in with Google:", payload.email);
+          localStorage.setItem("userEmail", payload.email);
+        } catch (error) {
+          console.error("[AUTH] Error extracting email from token:", error);
+        }
+
+        alert('Login with Google successful!');
+        setShowLogin(false);
+      } catch (error) {
+        console.error('Google authentication error:', error);
+        alert(error.message || 'Failed to authenticate with Google');
+      } finally {
+        setIsProcessingGoogle(false);
+      }
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -44,7 +147,7 @@ const LoginPopUp = ({ setShowLogin }) => {
     try {
       const response = await fetch(
         currState === "Sign Up"
-          ? 'http://localhost:5000/clientRegister'
+          ? `${API_URL}/clientRegister`//'http://localhost:5000/clientRegister'
           : 'http://localhost:5000/clientLogin',
         {
           method: 'POST',
@@ -230,85 +333,104 @@ const LoginPopUp = ({ setShowLogin }) => {
     }
 
     return (
-      <form onSubmit={handleSubmit}>
-        {currState === "Sign Up" && (
-          <>
-            <input
-              type="text"
-              name="first_name"
-              placeholder="First Name"
-              value={formData.first_name}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="text"
-              name="last_name"
-              placeholder="Last Name"
-              value={formData.last_name}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="number"
-              name="age"
-              placeholder="Age"
-              value={formData.age}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="text"
-              name="phone_number"
-              placeholder="Phone Number"
-              value={formData.phone_number}
-              onChange={handleChange}
-              required
-            />
-          </>
-        )}
-        <input
-          type="email"
-          name="email"
-          placeholder="Your Email Address"
-          value={formData.email}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Your Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
-        {currState === "Sign Up" && (
-          <>
-            <input
-              type="password"
-              name="confirm_password"
-              placeholder="Confirm Password"
-              value={formData.confirm_password}
-              onChange={handleChange}
-              required
-            />
-            <label>
+      <>
+        <form onSubmit={handleSubmit}>
+          {currState === "Sign Up" && (
+            <>
               <input
-                type="checkbox"
-                name="acceptedTerms"
-                checked={formData.acceptedTerms}
+                type="text"
+                name="first_name"
+                placeholder="First Name"
+                value={formData.first_name}
                 onChange={handleChange}
                 required
               />
-              I accept the terms and conditions
-            </label>
-          </>
-        )}
-        <button type="submit">
-          {currState === "Sign Up" ? "Create Account" : "Login"}
-        </button>
-      </form>
+              <input
+                type="text"
+                name="last_name"
+                placeholder="Last Name"
+                value={formData.last_name}
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="number"
+                name="age"
+                placeholder="Age"
+                value={formData.age}
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="text"
+                name="phone_number"
+                placeholder="Phone Number"
+                value={formData.phone_number}
+                onChange={handleChange}
+                required
+              />
+            </>
+          )}
+          <input
+            type="email"
+            name="email"
+            placeholder="Your Email Address"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Your Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+          {currState === "Sign Up" && (
+            <>
+              <input
+                type="password"
+                name="confirm_password"
+                placeholder="Confirm Password"
+                value={formData.confirm_password}
+                onChange={handleChange}
+                required
+              />
+              <label>
+                <input
+                  type="checkbox"
+                  name="acceptedTerms"
+                  checked={formData.acceptedTerms}
+                  onChange={handleChange}
+                  required
+                />
+                I accept the terms and conditions
+              </label>
+            </>
+          )}
+          <button type="submit">
+            {currState === "Sign Up" ? "Create Account" : "Login"}
+          </button>
+        </form>
+
+        {/* Divider with "OR" text */}
+        <div className="login-divider">
+          <span>OR</span>
+        </div>
+
+        {/* Google Sign-In Button */}
+        <div className="google-signin-container">
+          {isProcessingGoogle ? (
+            <div className="google-processing">
+              <div className="loader"></div>
+              <p>Processing...</p>
+            </div>
+          ) : (
+            <div id="google-signin-button"></div>
+          )}
+        </div>
+      </>
     );
   };
 
