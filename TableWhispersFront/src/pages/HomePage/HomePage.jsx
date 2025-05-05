@@ -192,7 +192,9 @@ const HomePage = () => {
   const fetchRecommendedRestaurants = async () => {
     try {
       //const response = await fetch('http://localhost:5000/all_Restaurants_Data');  // https://tablewhispersbackend-ggfxhehwg2egdaa7.westeurope-01.azurewebsites.net
-      const response = await fetch('https://tablewhispersbackend-ggfxhehwg2egdaa7.westeurope-01.azurewebsites.net/all_Restaurants_Data');
+      const response = await fetch('https://tablewhispersbackend-ggfxhehwg2egdaa7.westeurope-01.azurewebsites.net/all_Restaurants_Data',{
+        mode: 'no-cors' 
+      });
       const data = await response.json();
       console.log("🔹 Data from server:", data);
 
