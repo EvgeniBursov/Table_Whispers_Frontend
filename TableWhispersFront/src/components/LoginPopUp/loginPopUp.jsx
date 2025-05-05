@@ -147,7 +147,7 @@ const LoginPopUp = ({ setShowLogin }) => {
     try {
       const response = await fetch(
         currState === "Sign Up"
-          ? `${API_URL}/clientRegister`//'http://localhost:5000/clientRegister'
+          ? 'tablewhispersbackend.azurewebsites.net/clientRegister'
           : 'http://localhost:5000/clientLogin',
         {
           method: 'POST',
