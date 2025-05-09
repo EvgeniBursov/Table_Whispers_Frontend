@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Bills.css';
 import { assets } from '../../assets/assets';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
 const BillModal = ({ orderId, onClose, token }) => {
   const [bill, setBill] = useState(null);
@@ -13,7 +14,7 @@ const BillModal = ({ orderId, onClose, token }) => {
         setLoading(true);
         setError(null);
         
-        const response = await fetch(`http://localhost:5000/get_all_bills_for_user/order/${orderId}`, {
+        const response = await fetch(`${API_URL}/get_all_bills_for_user/order/${orderId}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -76,7 +77,7 @@ const BillModal = ({ orderId, onClose, token }) => {
     if (imagePath.startsWith('http')) return imagePath;
     
     // Otherwise, prepend the server URL
-    return `http://localhost:5000${imagePath}`;
+    return `${API_URL}${imagePath}`;
   };
 
   // Handle printing the bill

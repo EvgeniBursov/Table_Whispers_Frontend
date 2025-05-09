@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './ManagementDashboardCSS/MngRestaurantMenu.css';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
+
 
 const RestaurantMenu = ({ restaurantId }) => {
   const [menu, setMenu] = useState([]);
@@ -32,7 +34,7 @@ const RestaurantMenu = ({ restaurantId }) => {
   const fetchMenu = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/get_Restaurant_Menu/restaurant/${restaurantId}`);
+      const response = await fetch(`${API_URL}/get_Restaurant_Menu/restaurant/${restaurantId}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch menu');
@@ -49,7 +51,7 @@ const RestaurantMenu = ({ restaurantId }) => {
 
   const handleMenuAction = async (action, data) => {
     try {
-      const response = await fetch(`http://localhost:5000/update_Restaurant_Menu/restaurant/${restaurantId}`, {
+      const response = await fetch(`${API_URL}/update_Restaurant_Menu/restaurant/${restaurantId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

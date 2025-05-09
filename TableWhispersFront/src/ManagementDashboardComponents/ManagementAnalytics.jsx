@@ -8,6 +8,8 @@ import {
   Radar, ComposedChart, Area
 } from 'recharts';
 import { format, subMonths } from 'date-fns';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
+
 
 const ManagementAnalytics = ({ restaurantId }) => {
   console.log("START ManagementAnalytics");
@@ -42,7 +44,7 @@ const ManagementAnalytics = ({ restaurantId }) => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('http://localhost:5000/get_all_bills_for_Restaurants/restaurant/', {
+      const response = await fetch(`${API_URL}/get_all_bills_for_Restaurants/restaurant/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

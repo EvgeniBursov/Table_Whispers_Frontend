@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './SurveyPage.css';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
 // Star Rating Component
 const StarRating = ({ rating, setRating, disabled = false }) => {
@@ -63,7 +64,7 @@ const SurveyPage = () => {
       }
       
       try {
-        const response = await fetch(`http://localhost:5000/validate-survey?order_id=${order_id}`, {
+        const response = await fetch(`${API_URL}/validate-survey?order_id=${order_id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -102,7 +103,7 @@ const SurveyPage = () => {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:5000/submit-survey', {
+      const response = await fetch(`${API_URL}/submit-survey`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -150,7 +151,7 @@ const SurveyPage = () => {
         <p>{error}</p>
         <button 
           className="back-button"
-          onClick={() => window.location.href = 'http://localhost:5000/'}
+          onClick={() => window.location.href = `${API_URL}/`}
         >
           Return to Homepage
         </button>
@@ -166,7 +167,7 @@ const SurveyPage = () => {
         <p>We appreciate your input and look forward to serving you again!</p>
         <button 
           className="back-button"
-          onClick={() => window.location.href = 'http://localhost:5000/'}
+          onClick={() => window.location.href = `${API_URL}/}
         >
           Return to Homepage
         </button>

@@ -4,9 +4,11 @@ import BillModal  from "../../components/Bills/Bills";
 import { io } from 'socket.io-client';
 import "./profile.css";
 import ChatWithRestaurant from '../../ChatManagement/ChatWithRestaurant';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
+
 
 // Initialize Socket.io connection
-const socketUrl = 'http://localhost:5000';
+const socketUrl = API_URL;
 
 const ClientProfile = () => {
   const [profile, setProfile] = useState(null);
@@ -296,7 +298,7 @@ const ClientProfile = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/userProfile?email=${email}`,
+        `${API_URL}/userProfile?email=${email}`,
         {
           method: "GET",
           headers: {
@@ -319,7 +321,7 @@ const ClientProfile = () => {
   useEffect(() => {
     const fetchAllergies = async () => {
       try {
-        const response = await fetch("http://localhost:5000/getListOfAllergies");
+        const response = await fetch(`${API_URL}/getListOfAllergies`);
         if (!response.ok) throw new Error("Failed to fetch allergies");
         
         const data = await response.json();
@@ -463,7 +465,7 @@ const ClientProfile = () => {
       const formattedEndTime = `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
       
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:5000/update_Reservation_Details/restaurant`, {
+      const response = await fetch(`${API_URL}/update_Reservation_Details/restaurant`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -566,7 +568,7 @@ const ClientProfile = () => {
     
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/updateUserPhoneNumber", {
+      const response = await fetch(`${API_URL}/updateUserPhoneNumber`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -626,7 +628,7 @@ const ClientProfile = () => {
       const restaurantId = order?.restaurant_id || order?.restaurantId;
       
       // Call the API to update the reservation status
-      const response = await fetch(`http://localhost:5000/update_Reservation/restaurant/`, {
+      const response = await fetch(`${API_URL}/update_Reservation/restaurant/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -701,7 +703,7 @@ const ClientProfile = () => {
     }
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/resetClientPassword", {
+      const response = await fetch(`${API_URL}/resetClientPassword`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -735,7 +737,7 @@ const ClientProfile = () => {
     if (!confirmation) return;
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/deleteClientProfile", {
+      const response = await fetch(`${API_URL}/deleteClientProfile`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -756,7 +758,7 @@ const ClientProfile = () => {
   const handleAllergyChange = async (type, allergy = selectedAllergy) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/updateUserAlergic", {
+      const response = await fetch(`${API_URL}/updateUserAlergic`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -843,7 +845,7 @@ const ClientProfile = () => {
       formData.append('email', email);
       
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/updateUserProfileImage", {
+      const response = await fetch(`${API_URL}/updateUserProfileImage`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -911,7 +913,7 @@ const ClientProfile = () => {
     if (imagePath.startsWith('http')) return imagePath;
     
     // Otherwise, prepend the server URL
-    return `http://localhost:5000${imagePath}`;
+    return `${API_URL}${imagePath}`;
   };
 
   return (

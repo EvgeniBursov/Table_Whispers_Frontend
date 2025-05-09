@@ -4,6 +4,8 @@ import RestaurantReviews from '../../components/RestaurantReviews/RestaurantRevi
 import AvailableTimeCards from '../../components/AvailableTimeCards/AvailableTimeCards';
 import { useParams } from 'react-router-dom';
 import './RestaurantPage.css';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
+
 
 const RestaurantPage = () => {
     const { id } = useParams();
@@ -34,7 +36,7 @@ const RestaurantPage = () => {
     useEffect(() => {
       const fetchRestaurantData = async () => {
         try {
-          const response = await fetch(`http://localhost:5000/restaurant/${id}`);
+          const response = await fetch(`${API_URL}/restaurant/${id}`);
           const data = await response.json();
           console.log("Restaurant data:", data);
           setRestaurant(data);
@@ -51,9 +53,9 @@ const RestaurantPage = () => {
     return (
         <div className="restaurant-page">
             <div className="restaurant-header">
-                {/* תמונה ראשית */}
+                {/* */}
                 <img 
-                    src={`http://localhost:5000/${restaurant.mainImage}`} 
+                    src={`${API_URL}/${restaurant.mainImage}`} 
                     alt={restaurant.res_name} 
                     className="main-image"
                 />
@@ -180,7 +182,7 @@ const RestaurantPage = () => {
                         {restaurant.all_images && restaurant.all_images.map((image, index) => (
                             <img 
                                 key={index}
-                                src={`http://localhost:5000/${image}`}
+                                src={`${API_URL}/${image}`}
                                 alt={`${restaurant.res_name} ${index + 1}`}
                                 className="gallery-image"
                             />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import './ChatWithRestaurant.css';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
 const ChatWithRestaurant = ({ restaurant, customerEmail, onClose }) => {
   const [messages, setMessages] = useState([]);
@@ -21,7 +22,7 @@ const ChatWithRestaurant = ({ restaurant, customerEmail, onClose }) => {
   
   // Initialize socket connection
   useEffect(() => {
-    const socketUrl = 'http://localhost:5000';
+    const socketUrl = `${API_URL}`;
     const newSocket = io(socketUrl);
     
     setSocket(newSocket);
@@ -137,7 +138,7 @@ const ChatWithRestaurant = ({ restaurant, customerEmail, onClose }) => {
       
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/chat_history/${orderId}/${customerEmail}`);
+        const response = await fetch(`${API_URL}/chat_history/${orderId}/${customerEmail}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch chat history');

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './loginPopUp.css';
 import { assets } from '../../assets/assets';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
 const LoginPopUp = ({ setShowLogin }) => {
   const [currState, setCurrState] = useState("Sign Up");
@@ -87,7 +87,7 @@ const LoginPopUp = ({ setShowLogin }) => {
       setIsProcessingGoogle(true);
       try {
         // Send the ID token to your backend
-        const backendResponse = await fetch('http://localhost:5000/google_auth', {
+        const backendResponse = await fetch('{API_URL}/google_auth', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -147,8 +147,8 @@ const LoginPopUp = ({ setShowLogin }) => {
     try {
       const response = await fetch(
         currState === "Sign Up"
-          ? 'https://tablewhispersbackend.azurewebsites.net/clientRegister'
-          : 'http://localhost:5000/clientLogin',
+          ? `${API_URL}/clientRegister`
+          : `${API_URL}/clientLogin`,
         {
           method: 'POST',
           headers: {
@@ -195,7 +195,7 @@ const LoginPopUp = ({ setShowLogin }) => {
             alert('Please enter your email');
             return;
           }
-          url = 'http://localhost:5000/sendTotpCode';
+          url = `${API_URL}/sendTotpCode`;
           payload = { email: resetEmail ,user_type:'Client'};
           break;
 
@@ -205,7 +205,7 @@ const LoginPopUp = ({ setShowLogin }) => {
             setResetState('email');
             return;
           }
-          url = 'http://localhost:5000/verifyTotpCode';
+          url = `${API_URL}/verifyTotpCode`;
           payload = { 
             email: verifiedEmail,
             user_type:'Client',
@@ -223,7 +223,7 @@ const LoginPopUp = ({ setShowLogin }) => {
             alert('Passwords do not match');
             return;
           }
-          url = 'http://localhost:5000/resetClientPassword';
+          url = `${API_URL}/resetClientPassword`;
           payload = { 
             email: verifiedEmail,
             password: newPassword,

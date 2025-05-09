@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './ManagementDashboardCSS/MngSidebar.css';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
+
 
 
 const ManagementSideBar = ({ activeView, setActiveView }) => {
@@ -10,7 +12,7 @@ const ManagementSideBar = ({ activeView, setActiveView }) => {
     const fetchRestaurantName = async () => {
       try {
 
-        const response = await fetch(`http://localhost:5000/restaurant/${restaurantId}`);
+        const response = await fetch(`${API_URL}/restaurant/${restaurantId}`);
         const data = await response.json();
         setRestaurantName(data.res_name)
       } catch (error) {

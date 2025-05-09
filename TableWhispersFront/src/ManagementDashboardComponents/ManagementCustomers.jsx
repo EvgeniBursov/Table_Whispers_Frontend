@@ -11,15 +11,15 @@ const ManagementCustomers = () => {
   const [sortOrder, setSortOrder] = useState('desc'); 
   const restaurantId = '67937038eb604c7927e85d2a'; 
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
+
   
   // Fetch customers data
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
         setLoading(true);
-        
-        const apiUrl = 'http://localhost:5000';
-        const response = await fetch(`${apiUrl}/get_Restaurant_Clients/restaurant/${restaurantId}`, {
+        const response = await fetch(`${API_URL}/get_Restaurant_Clients/restaurant/${restaurantId}`, {
           headers: {
             'Authorization': localStorage.getItem('token') || ''
           }

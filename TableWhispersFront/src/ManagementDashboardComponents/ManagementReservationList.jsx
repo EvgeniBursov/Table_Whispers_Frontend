@@ -4,6 +4,8 @@ import './ManagementDashboardCSS/MngReservationList.css';
 import './ManagementDashboardCSS/MngStatusModal.css';
 import MngEmptyState from './ManagementEmptyState';
 import TimeSelector from '../components/TimeSelector/TimeSelector';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
+
 
 // Helper function to format time in 24-hour format
 const formatTime24h = (dateString) => {
@@ -155,7 +157,7 @@ const ManagementReservationList = ({
                          ? `${reservation.customer.firstName} ${reservation.customer.lastName || ''}`
                          : 'Customer';
       
-      const response = await fetch(`http://localhost:5000/update_Reservation/restaurant/`, {
+      const response = await fetch(`${API_URL}/update_Reservation/restaurant/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
