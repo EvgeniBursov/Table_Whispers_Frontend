@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './ManagementDashboardCSS/MngSurveys.css';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
 const StarDisplay = ({ rating }) => {
     return (
@@ -47,7 +48,7 @@ const StarDisplay = ({ rating }) => {
       const fetchSurveys = async () => {
         try {
           setLoading(true);
-          const response = await fetch(`http://localhost:5000/getRestaurantSurveysDetailed/${restaurantId}`);
+          const response = await fetch(`${API_URL}/getRestaurantSurveysDetailed/${restaurantId}`);
           
           if (!response.ok) {
             throw new Error('Failed to fetch surveys');

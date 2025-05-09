@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './RestaurantReviews.css';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
 const RestaurantReviews = ({ reviews: initialReviews, restaurantId, isLoggedIn, currentUser }) => {
   const [reviews, setReviews] = useState(initialReviews || []);
@@ -29,7 +30,7 @@ const RestaurantReviews = ({ reviews: initialReviews, restaurantId, isLoggedIn, 
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/add_New_Reviews/restaurant/${restaurantId}`, {
+      const response = await fetch(`${API_URL}/add_New_Reviews/restaurant/${restaurantId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

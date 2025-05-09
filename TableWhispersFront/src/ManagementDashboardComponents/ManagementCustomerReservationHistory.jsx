@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './ManagementDashboardCSS/MngCustomerReservationHistory.css';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
+
 
 // Define the utility functions that are needed - using 24-hour format
 const formatTime24h = (dateString) => {
@@ -34,8 +36,7 @@ const CustomerReservationHistory = ({ customer, onSelectReservation }) => {
           if (customer.id) params.append('customer_id', customer.id);
           if (customer.email) params.append('email', customer.email);
           
-          const apiUrl = 'http://localhost:5000';
-          const response = await fetch(`${apiUrl}/get_Customer_Reservation_History/restaurant/?${params}`, {
+          const response = await fetch(`${API_URL}/get_Customer_Reservation_History/restaurant/?${params}`, {
             headers: {
               'Authorization': localStorage.getItem('token') || ''
             }

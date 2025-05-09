@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './RestaurantAuth.css';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
 const RestaurantAuth = () => {
+  const navigate = useNavigate();
   const [currState, setCurrState] = useState("Sign Up");
   const [formData, setFormData] = useState({
     first_name: '',
@@ -18,10 +21,10 @@ const RestaurantAuth = () => {
     acceptedTerms: false
   });
 
-  // מצבים לאימות TOTP
   const [showTOTP, setShowTOTP] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [tempUserData, setTempUserData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -33,15 +36,17 @@ const RestaurantAuth = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     
     if (currState === "Sign Up" && formData.password !== formData.confirm_password) {
       alert('Passwords do not match.');
+      setLoading(false);
       return;
     }
 
     try {
       const response = await fetch(
-        `http://localhost:5000/${currState === "Sign Up" ? 'resRegister' : 'resLogin'}`,
+        `${API_URL}/${currState === "Sign Up" ? 'resRegister' : 'resLogin'}`,
         {
           method: 'POST',
           headers: {
@@ -55,21 +60,37 @@ const RestaurantAuth = () => {
       
       if (!response.ok) {
         alert(data.error);
+        setLoading(false);
         return;
       }
-      setTempUserData(data);
+      
+      const restaurantId = data.restaurant_id || data.user?.restaurant_id || data.connect?.restaurant_id;
+      
+      if (!restaurantId) {
+        console.error("Restaurant ID not found in response:", data);
+        alert("Could not retrieve restaurant ID. Please contact support.");
+        setLoading(false);
+        return;
+      }
+      
+      // Store the data and restaurantId for after TOTP verification
+      setTempUserData({...data, restaurantId});
       setShowTOTP(true);
+      setLoading(false);
 
     } catch (error) {
+      console.error("Error during login/signup:", error);
       alert('Could not connect to the server.');
+      setLoading(false);
     }
   };
 
   const handleVerifyTOTP = async (e) => {
     e.preventDefault();
+    setLoading(true);
     
     try {
-      const response = await fetch('http://localhost:5000/verifyTotpCode', {
+      const response = await fetch(`${API_URL}/verifyTotpCode`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -85,25 +106,37 @@ const RestaurantAuth = () => {
 
       if (!response.ok) {
         alert(data.error);
+        setLoading(false);
         return;
       }
 
-      // אם האימות הצליח
-      localStorage.setItem("restaurantToken", data.token);
-      try {
-        const base64Url = data.token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const payload = JSON.parse(window.atob(base64));
-        localStorage.setItem("restaurantEmail", payload.email);
-      } catch (error) {
-        console.error("[AUTH] Error extracting email from token:", error);
+      // Store token in localStorage if needed
+      if (data.token) {
+        localStorage.setItem("restaurantToken", data.token);
+        try {
+          const base64Url = data.token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const payload = JSON.parse(window.atob(base64));
+          localStorage.setItem("restaurantEmail", payload.email);
+        } catch (error) {
+          console.error("[AUTH] Error extracting email from token:", error);
+        }
       }
-
-      // ניווט לדף הרצוי
-      window.location.href = '/restaurant/dashboard';
+      
+      // Navigate to the dashboard using the previously stored restaurant ID
+      const restaurantId = data.restaurant_id || tempUserData?.restaurantId;
+      
+      if (restaurantId) {
+        navigate(`/restaurant/login/${restaurantId}`);
+      } else {
+        console.error("Failed to get restaurant ID after verification", data);
+        alert("Verification successful but couldn't load your dashboard. Please try logging in again.");
+      }
       
     } catch (error) {
+      console.error("Error during TOTP verification:", error);
       alert('Failed to verify code.');
+      setLoading(false);
     }
   };
 
@@ -119,7 +152,9 @@ const RestaurantAuth = () => {
             value={verificationCode}
             onChange={(e) => setVerificationCode(e.target.value)}
           />
-          <button onClick={handleVerifyTOTP}>Verify Code</button>
+          <button onClick={handleVerifyTOTP} disabled={loading}>
+            {loading ? 'Verifying...' : 'Verify Code'}
+          </button>
         </div>
       );
     }
@@ -225,8 +260,8 @@ const RestaurantAuth = () => {
             </label>
           </>
         )}
-        <button type="submit">
-          {currState === "Sign Up" ? "Create Account" : "Login"}
+        <button type="submit" disabled={loading}>
+          {loading ? 'Processing...' : (currState === "Sign Up" ? "Create Account" : "Login")}
         </button>
       </form>
     );
@@ -255,4 +290,5 @@ const RestaurantAuth = () => {
     </div>
   );
 };
+
 export default RestaurantAuth;

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import AvailableTimeCards from '../../components/AvailableTimeCards/AvailableTimeCards';
 import ReservationModal from '../../components/TableReservation/ReservationModel';
 import './HomePage.css';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
+
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -191,8 +193,7 @@ const HomePage = () => {
   // Fetch recommended restaurants
   const fetchRecommendedRestaurants = async () => {
     try {
-      //const response = await fetch('http://localhost:5000/all_Restaurants_Data');  // https://tablewhispersbackend-ggfxhehwg2egdaa7.westeurope-01.azurewebsites.net
-      const response = await fetch('tablewhispersbackend.azurewebsites.net/all_Restaurants_Data');
+      const response = await fetch(`${API_URL}/all_Restaurants_Data`); 
       const data = await response.json();
       console.log("🔹 Data from server:", data);
 
@@ -231,7 +232,7 @@ const HomePage = () => {
         try {
           // Use the correct endpoint based on router configuration
           const response = await fetch(
-            `http://localhost:5000/get_Available_Times/reservation/restaurant/${restaurant._id}?date=${selectedDate}&partySize=${selectedPeople}`
+            `${API_URL}/get_Available_Times/reservation/restaurant/${restaurant._id}?date=${selectedDate}&partySize=${selectedPeople}`
           );
           
           if (!response.ok) {
@@ -383,7 +384,7 @@ const HomePage = () => {
       // First try to use the search_restaurants endpoint if available
       try {
         const response = await fetch(
-          `http://localhost:5000/search_restaurants?date=${selectedDate}&time=${convertTo12HourFormat(selectedTime)}&partySize=${selectedPeople}`
+          `${API_URL}/search_restaurants?date=${selectedDate}&time=${convertTo12HourFormat(selectedTime)}&partySize=${selectedPeople}`
         );
         
         const data = await response.json();
@@ -406,7 +407,7 @@ const HomePage = () => {
       }
       
       // Fallback - fetch all restaurants and filter by availability
-      const response = await fetch('http://localhost:5000/all_Restaurants_Data');
+      const response = await fetch(`${API_URL}/all_Restaurants_Data`);
       const data = await response.json();
       
       if (Array.isArray(data)) {
@@ -573,7 +574,7 @@ const HomePage = () => {
                   onClick={(e) => handleRestaurantClick(e, restaurant._id)}
                 >
                   <img 
-                    src={`http://localhost:5000/${restaurant.mainImage}`} 
+                    src={`${API_URL}/${restaurant.mainImage}`} 
                     alt={restaurant.res_name} 
                     className="restaurant-image"
                   />

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import './ManagementDashboardCSS/MngReservationDetail.css';
 import CustomerReservationHistory from './ManagementCustomerReservationHistory';
 import BillModal from '../components/Bills/Bills'; 
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
+
 
 const formatTime24h = (dateString) => {
   const date = new Date(dateString);
@@ -92,7 +94,7 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
   const getImageUrl = (imagePath) => {
     if (!imagePath) return '';
     if (imagePath.startsWith('http')) return imagePath;
-    return `http://localhost:5000${imagePath}`;
+    return `${API_URL}${imagePath}`;
   };
 
   const handleSubmitEdit = async (e) => {
@@ -114,9 +116,7 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
       
       const startTimeISO = startTime.toISOString();
       const endTimeISO = endTime.toISOString();
-      
-      const apiUrl = 'http://localhost:5000';
-      const response = await fetch(`${apiUrl}/update_Reservation_Details/restaurant`, {
+      const response = await fetch(`${API_URL}/update_Reservation_Details/restaurant`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -167,7 +167,7 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
   const handleCancelReservation = async () => {
     if (window.confirm('Are you sure you want to cancel this reservation?')) {
       try {
-        const response = await fetch(`http://localhost:5000/update_Reservation/restaurant/`, {
+        const response = await fetch(`${API_URL}/update_Reservation/restaurant/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import './ChatManagement.css';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
+
 
 const ChatManagement = ({ restaurantId }) => {
   const [customers, setCustomers] = useState([]);
@@ -14,7 +16,7 @@ const ChatManagement = ({ restaurantId }) => {
 
   // Initialize socket connection
   useEffect(() => {
-    const socketUrl = 'http://localhost:5000';
+    const socketUrl = `${API_URL}`;
     const newSocket = io(socketUrl);
     
     setSocket(newSocket);
@@ -187,7 +189,7 @@ const ChatManagement = ({ restaurantId }) => {
     const fetchCustomerChats = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/restaurant_chats/${restaurantId}`);
+        const response = await fetch(`${API_URL}/restaurant_chats/${restaurantId}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch customer chats');
@@ -223,7 +225,7 @@ const ChatManagement = ({ restaurantId }) => {
       
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/chat_history/${selectedCustomer.order_id}/${selectedCustomer.customerEmail}`);
+        const response = await fetch(`${API_URL}/chat_history/${selectedCustomer.order_id}/${selectedCustomer.customerEmail}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch chat history');
@@ -326,7 +328,7 @@ const ChatManagement = ({ restaurantId }) => {
                 <div className="mng-chat-customer-avatar">
                   {customer.customerInfo?.profileImage ? (
                     <img 
-                      src={`http://localhost:5000${customer.customerInfo.profileImage}`} 
+                      src={`${API_URL}${customer.customerInfo.profileImage}`} 
                       alt={`${customer.customerInfo?.firstName || 'Customer'}`} 
                     />
                   ) : (
@@ -384,7 +386,7 @@ const ChatManagement = ({ restaurantId }) => {
               <div className="mng-chat-header-info">
                 {selectedCustomer.customerInfo?.profileImage ? (
                   <img 
-                    src={`http://localhost:5000${selectedCustomer.customerInfo.profileImage}`} 
+                    src={`${API_URL}${selectedCustomer.customerInfo.profileImage}`} 
                     alt={`${selectedCustomer.customerInfo?.firstName || 'Customer'}`} 
                     className="mng-chat-header-avatar"
                   />

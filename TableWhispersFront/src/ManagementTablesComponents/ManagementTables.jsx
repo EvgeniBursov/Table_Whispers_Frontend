@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import io from 'socket.io-client';
 import './ManagementTables.css';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
+
 
 /**
  * ManagementTables Component - Improved Version
@@ -63,7 +65,7 @@ const ManagementTables = ({ restaurantId }) => {
   const socketRef = useRef(null);
   
   // API base URL
-  const API_URL = 'http://localhost:5000';
+  //const API_URL = 'http://localhost:5000';
   
   /**
    * Format date for API requests (YYYY-MM-DD)

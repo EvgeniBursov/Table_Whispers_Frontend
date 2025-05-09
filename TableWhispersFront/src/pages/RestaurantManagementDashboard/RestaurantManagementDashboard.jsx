@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './RestaurantManagementDashboard.css';
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
 // Import components
 import MngSidebar from '../../ManagementDashboardComponents/ManagementSideBar';
@@ -14,10 +15,22 @@ import MngMenu from '../../ManagementDashboardComponents/ManagementRestaurantMen
 import MngAnalytics from '../../ManagementDashboardComponents/ManagementAnalytics';
 import MngSurveys from '../../ManagementDashboardComponents/ManagementSurveys';
 import MngChat from '../../ChatManagement/ChatManagement';
+import MngRes from '../RestaurantPage/RestaurantPage';
 import { io } from 'socket.io-client';
 
-const RestaurantManagementDashboard = () => {
-  // State variables
+const RestaurantManagementDashboard = ({restaurantId}) => {
+  useEffect(() => {
+    if (!restaurantId) {
+      console.error("No restaurant ID provided to dashboard!");
+      return;
+    }
+    
+    console.log("Dashboard initialized with restaurant ID:", restaurantId);
+    
+    // Load initial data
+    loadRestaurantData();
+  }, [restaurantId]);
+  
   const [activeView, setActiveView] = useState('reservations');
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [restaurantData, setRestaurantData] = useState(null);
@@ -35,12 +48,12 @@ const RestaurantManagementDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   
   // Hardcoded restaurant ID - in production this would come from authentication
-  const restaurantId = '67937038eb604c7927e85d2a';
+  //const restaurantId = '67937038eb604c7927e85d2a';
 
   // Initialize socket.io connection once on component mount
   useEffect(() => {
     // Socket setup
-    const socketUrl = 'http://localhost:5000';
+    const socketUrl = API_URL;
     const socket = io(socketUrl, {
       transports: ['websocket', 'polling']
     });
@@ -306,7 +319,7 @@ const RestaurantManagementDashboard = () => {
       setError(null);
       
       // Make the API call with date parameter
-      const url = new URL(`http://localhost:5000/reservation/restaurant/${restaurantId}`);
+      const url = new URL(`${API_URL}/reservation/restaurant/${restaurantId}`);
       
       // Add date parameter if date filter is set
       if (dateFilter) {
@@ -375,7 +388,7 @@ const RestaurantManagementDashboard = () => {
                          : 'Customer';
       
       // Call the API to update the reservation status
-      const response = await fetch(`http://localhost:5000/update_Reservation/restaurant/`, {
+      const response = await fetch(`${API_URL}/update_Reservation/restaurant/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -471,7 +484,7 @@ const RestaurantManagementDashboard = () => {
                            : 'Customer';
         
         // Make API call to update reservation details
-        const response = await fetch(`http://localhost:5000/update_Reservation_Details/restaurant`, {
+        const response = await fetch(`${API_URL}/update_Reservation_Details/restaurant`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -659,9 +672,16 @@ const RestaurantManagementDashboard = () => {
           <MngChat restaurantId={restaurantId} />
         )}
 
+      {activeView === 'restaurantPage' && (
+          //<MngChat restaurantId={restaurantId} />
+          <MngRes restaurantId={restaurantId} />
+         //navigate(`/restaurant/${restaurantId}`);
+        )}
+
         {/* Other sections (coming soon) */}
         {activeView !== 'reservations' && activeView !== 'customers' && activeView !== 'tables' &&
-        activeView !== 'menu' && activeView !== 'analytics' && activeView !== 'surveys' && activeView !== 'chat' && (
+        activeView !== 'menu' && activeView !== 'analytics' && activeView !== 'surveys' &&
+        activeView !== 'chat' && activeView !== 'restaurantPage' && (
           <MngEmptyState 
             icon="🚧" 
             title={`${activeView.charAt(0).toUpperCase() + activeView.slice(1)} Management`} 
