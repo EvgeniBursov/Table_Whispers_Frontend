@@ -1,4 +1,4 @@
-name: Azure Static Web Apps CI/CD
+name: Azure Static Web Apps CI/CD #Test
 
 on:
   push:
@@ -44,6 +44,7 @@ jobs:
           github_id_token: ${{ steps.idtoken.outputs.result }}
         env:
           VITE_BACKEND_API: ${{ secrets.BACKEND_API_URL }}
+          GOOGLE_AUTH: ${{ secrets.GOOGLE_AUTH }}
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
