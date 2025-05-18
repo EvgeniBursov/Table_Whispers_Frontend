@@ -28,6 +28,7 @@ const TableReservation = ({
     const [restaurantData, setRestaurantData] = useState(null);
     const [tableAvailability, setTableAvailability] = useState({}); // Table availability info
     const [showTableSelection, setShowTableSelection] = useState(false);
+    const [termsAgreed, setTermsAgreed] = useState(false);
     
     // Guest information fields
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -277,6 +278,13 @@ const TableReservation = ({
           return false;
         }
       }
+      
+      // Check terms agreement if a specific table is selected
+      if (selectedTable && !termsAgreed) {
+        setBookingError('Please agree to the table reservation terms');
+        return false;
+      }
+      
       return true;
     };
 
@@ -321,11 +329,13 @@ const TableReservation = ({
           time: time12h, // Send in 12-hour format for the backend
           day: selectedDay,
           guests: parseInt(selectedPeople),
-          date: selectedDate
+          date: selectedDate,
+          tableId: null, // Explicitly set tableId to null by default
+          tableNumber: null // Explicitly set tableNumber to null by default
         };
         
-        // Add table selection if available
-        if (selectedTable) {
+        // Add table selection only if explicitly selected
+        if (selectedTable && showTableSelection) {
           requestBody.tableId = selectedTable.id || selectedTable._id;
           requestBody.tableNumber = selectedTable.table_number;
         }
@@ -450,7 +460,10 @@ const TableReservation = ({
             {selectedTable && (
               <div className="detail-row">
                 <span className="detail-label">Table:</span>
-                <span className="detail-value">Table {selectedTable.table_number}</span>
+                <span className="detail-value">
+                  Table {selectedTable.table_number} 
+                  {selectedTable.section && ` - ${selectedTable.section} Section`}
+                </span>
               </div>
             )}
             
@@ -563,11 +576,12 @@ const TableReservation = ({
             </div>
           )}
 
-          {!showTableSelection && selectedTime && (
+          {/* Show "Choose Your Table" button only for logged-in users */}
+          {!showTableSelection && selectedTime && isLoggedIn && (
             <div className="table-selection-proceed">
               <button 
                 type="button" 
-                className="proceed-to-tables-btn"
+                className="choose-table-btn"
                 onClick={handleProceedToTableSelection}
                 disabled={!selectedTime || loadingTimes}
               >
@@ -576,13 +590,34 @@ const TableReservation = ({
             </div>
           )}
 
-          {/* Table selection component */}
-          {showTableSelection && (
-            <TableSelection 
-              availableTables={availableTables}
-              onTableSelect={handleTableSelection}
-              selectedTableId={selectedTable ? (selectedTable.id || selectedTable._id) : null}
-            />
+          {/* Table selection component - only for logged in users */}
+          {showTableSelection && isLoggedIn && (
+            <div className="table-selection-wrapper">
+              <TableSelection 
+                availableTables={availableTables}
+                onTableSelect={handleTableSelection}
+                selectedTableId={selectedTable ? (selectedTable.id || selectedTable._id) : null}
+              />
+              
+              {/* Terms agreement checkbox - only show when a table is selected */}
+              {selectedTable && (
+                <div className="terms-agreement">
+                  <label className="checkbox-container">
+                    <input
+                      type="checkbox"
+                      checked={termsAgreed}
+                      onChange={(e) => setTermsAgreed(e.target.checked)}
+                    />
+                    <span className="checkbox-label">
+                      I agree to the table reservation terms and conditions
+                    </span>
+                  </label>
+                  <div className="terms-note">
+                    By selecting a specific table, you agree to arrive on time. The table will be held for 15 minutes past your reservation time.
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Email field is always required */}

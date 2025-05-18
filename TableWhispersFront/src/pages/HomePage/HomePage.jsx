@@ -383,31 +383,7 @@ const HomePage = () => {
     setSearchMessage(null);
     
     try {
-      // First try to use the search_restaurants endpoint if available
-      try {
-        const response = await fetch(
-          `${API_URL}/search_restaurants?date=${selectedDate}&time=${convertTo12HourFormat(selectedTime)}&partySize=${selectedPeople}`
-        );
-        
-        const data = await response.json();
-        
-        if (data.success && data.restaurants) {
-          setFilteredRestaurants(data.restaurants);
-          
-          // Fetch availability for search results
-          fetchAvailabilityForAllRestaurants(data.restaurants);
-          
-          if (data.restaurants.length === 0) {
-            setSearchMessage(`No restaurants available for ${selectedPeople} people at ${selectedTime} on ${selectedDate}`);
-          }
-          
-          setIsSearching(false);
-          return;
-        }
-      } catch (error) {
-        //console.log("Search endpoint not available, using fallback...");
-      }
-      
+
       // Fallback - fetch all restaurants and filter by availability
       const response = await fetch(`${API_URL}/all_Restaurants_Data`);
       const data = await response.json();

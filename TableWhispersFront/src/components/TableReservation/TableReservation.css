@@ -87,6 +87,43 @@
   transform: none;
 }
 
+/* Choose Table Button Styling */
+.table-selection-proceed {
+  margin: 8px 0;
+  text-align: center;
+}
+
+.choose-table-btn {
+  padding: 12px 24px;
+  background: #e31837;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  width: 100%;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.choose-table-btn:hover {
+  background: #6d0c1b;
+  transform: translateY(-2px);
+}
+
+.choose-table-btn:active {
+  transform: scale(0.98);
+}
+
+.choose-table-btn:disabled {
+  background: #b0bec5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* Guest information styling */
 .guest-info-section {
   margin-top: 8px;
@@ -119,6 +156,7 @@
   border-radius: 4px;
   font-size: 14px;
 }
+
 
 /* Reservation Confirmation Styling */
 .reservation-confirmation {
@@ -274,7 +312,8 @@
     font-size: 14px;
   }
   
-  .find-table-btn {
+  .find-table-btn,
+  .choose-table-btn {
     padding: 12px;
     font-size: 15px;
   }
@@ -307,6 +346,10 @@
   .confirmation-details {
     padding: 12px;
   }
+  
+  .table-simple-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* Small mobile phones */
@@ -317,7 +360,8 @@
     font-size: 14px;
   }
   
-  .find-table-btn {
+  .find-table-btn,
+  .choose-table-btn {
     font-size: 14px;
   }
   
@@ -328,6 +372,10 @@
   .detail-label, 
   .detail-value {
     font-size: 13px;
+  }
+  
+  .table-simple-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -442,13 +490,35 @@ body.modal-open {
   overflow: hidden;
 }
 
+/* Table selection component styling */
+.table-selection-container {
+  margin: 16px 0;
+}
+
+.table-selection-container h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+}
+
+.table-selection-wrapper {
+  margin: 20px 0;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+}
+
 .table-simple-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 10px;
-  max-height: 250px;
+  max-height: 300px;
   overflow-y: auto;
   padding: 10px 5px;
+  margin-bottom: 16px;
 }
 
 .table-simple-card {
@@ -459,11 +529,14 @@ body.modal-open {
   text-align: center;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
 }
 
 .table-simple-card:hover {
   border-color: #e31837;
   transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .table-simple-card.selected {
@@ -475,14 +548,21 @@ body.modal-open {
 .table-number {
   font-weight: 600;
   font-size: 14px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  color: #333;
 }
 
-.table-simple-info {
+.table-info {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 4px;
   font-size: 12px;
   color: #666;
+}
+
+.table-section-label {
+  font-weight: 500;
+  color: #1976d2;
 }
 
 .table-shape-label {
@@ -493,9 +573,52 @@ body.modal-open {
   font-weight: 500;
 }
 
-/* Responsive adjustments */
-@media (max-width: 480px) {
-  .table-simple-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+/* Terms agreement styling */
+.terms-agreement {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: flex-start;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.checkbox-container input {
+  margin-right: 8px;
+  margin-top: 3px;
+}
+
+.checkbox-label {
+  font-size: 14px;
+  color: #333;
+}
+
+.terms-note {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #666;
+  padding: 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+
+/* No tables available styling */
+.no-tables-available {
+  padding: 20px;
+  text-align: center;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin: 20px 0;
+  border: 1px dashed #ddd;
+}
+
+.no-tables-available p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 14px;
 }
