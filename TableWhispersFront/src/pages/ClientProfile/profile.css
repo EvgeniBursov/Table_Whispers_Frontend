@@ -127,6 +127,7 @@
   align-items: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  word-break: break-word; /* Allow breaking for long numbers */
 }
 
 .phone-value:hover {
@@ -134,10 +135,10 @@
 }
 
 .edit-icon {
-  margin-right: 5px;
   font-size: 14px;
   opacity: 0.5;
   margin-left: 10px;
+  flex-shrink: 0; /* Prevent icon from shrinking */
 }
 
 .phone-value:hover .edit-icon {
@@ -400,6 +401,7 @@
   padding-top: 15px;
   border-top: 1px solid #eee;
   gap: 10px;
+  flex-wrap: wrap; /* Allow buttons to wrap when needed */
 }
 
 .edit-reservation-button {
@@ -430,6 +432,52 @@
 
 .cancel-order-button:hover {
   background-color: #d32f2f;
+}
+
+/* Chat button styling */
+.chat-with-restaurant-button {
+  padding: 8px 16px;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chat-with-restaurant-button:hover {
+  background-color: #0b7dda;
+}
+
+.chat-icon {
+  font-size: 16px;
+}
+
+/* View Bill Button */
+.view-bill-button {
+  padding: 8px 16px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.view-bill-button:hover {
+  background-color: #388e3c;
+}
+
+.bill-icon {
+  font-size: 16px;
 }
 
 /* Reservation edit form */
@@ -901,6 +949,7 @@
     grid-template-columns: 1fr;
   }
 
+  /* Improved tabs for mobile */
   .tabs {
     flex-wrap: wrap;
     justify-content: center;
@@ -910,6 +959,8 @@
     flex-grow: 1;
     flex-basis: calc(50% - 10px);
     text-align: center;
+    font-size: 14px; /* Smaller font on mobile */
+    padding: 8px 10px; /* Adjust padding */
   }
 
   .password-form {
@@ -940,35 +991,39 @@
     grid-template-columns: 1fr;
   }
   
-  .form-actions {
+  /* Improved order action buttons for mobile */
+  .order-actions {
     flex-direction: column;
+    width: 100%;
   }
   
   .edit-reservation-button,
-  .cancel-order-button {
+  .cancel-order-button,
+  .chat-with-restaurant-button,
+  .view-bill-button {
     width: 100%;
     margin-right: 0;
     text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
-}
-.view-bill-button {
-  padding: 8px 16px;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.view-bill-button:hover {
-  background-color: #388e3c;
-}
-
-.bill-icon {
-  font-size: 16px;
+  
+  /* Fix for edit phone container on mobile */
+  .edit-phone-container {
+    width: 100%;
+  }
+  
+  .edit-phone-buttons {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .edit-phone-input {
+    width: 100%;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
 }
