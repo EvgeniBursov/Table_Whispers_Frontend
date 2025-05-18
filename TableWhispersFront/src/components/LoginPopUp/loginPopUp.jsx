@@ -66,6 +66,7 @@ const LoginPopUp = ({ setShowLogin }) => {
         callback: handleGoogleResponse,
         auto_select: false,
         cancel_on_tap_outside: true,
+        locale: 'en'
       });
       
       // Render the button
@@ -87,7 +88,7 @@ const LoginPopUp = ({ setShowLogin }) => {
       setIsProcessingGoogle(true);
       try {
         // Send the ID token to your backend
-        const backendResponse = await fetch('{API_URL}/google_auth', {
+        const backendResponse = await fetch(`${API_URL}/google_auth`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

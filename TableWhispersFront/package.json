@@ -1,7 +1,6 @@
 {
-  "name": "tablewhispersfront",
-  "private": true,
-  "version": "0.0.0",
+  "name": "tablewhispers_frontend_sprint_7",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

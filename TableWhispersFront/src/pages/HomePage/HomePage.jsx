@@ -194,10 +194,10 @@ const HomePage = () => {
   const fetchRecommendedRestaurants = async () => {
     try {
       const response = await fetch(`${API_URL}/all_Restaurants_Data`); 
-      console.log(import.meta.env.VITE_BACKEND_API)
+      ////console.log(import.meta.env.VITE_BACKEND_API)
       //const response = await fetch(`https://tablewhispersback.azurewebsites.net/all_Restaurants_Data`);
       const data = await response.json();
-      console.log("🔹 Data from server:", data);
+      ////console.log("🔹 Data from server:", data);
 
       if (Array.isArray(data)) {
         setRestaurants(data);
@@ -243,21 +243,21 @@ const HomePage = () => {
           }
           
           const data = await response.json();
-          console.log(`Availability data for ${restaurant.res_name}:`, data);
+          //console.log(`Availability data for ${restaurant.res_name}:`, data);
           
           if (data.success && data.availableTimes) {
             // Process the available times
             const processedTimes = processAvailableTimes(data.availableTimes);
-            console.log("Processed times:", processedTimes);
+            //console.log("Processed times:", processedTimes);
             
             // Filter to only include valid times (future times with 30-min buffer)
             const validTimes = processedTimes.filter(slot => isValidTimeSlot(slot));
-            console.log("Valid times:", validTimes);
+            //console.log("Valid times:", validTimes);
             
             // Store in our object
             newAvailabilityData[restaurant._id] = validTimes;
           } else {
-            console.log(`No available times found for ${restaurant.res_name}`);
+            //console.log(`No available times found for ${restaurant.res_name}`);
             newAvailabilityData[restaurant._id] = [];
           }
         } catch (error) {
@@ -271,7 +271,7 @@ const HomePage = () => {
       
       // Update state with the new availability data
       setAvailabilityData(newAvailabilityData);
-      console.log("All availability data:", newAvailabilityData);
+      //console.log("All availability data:", newAvailabilityData);
     } catch (error) {
       console.error('Error fetching availability for restaurants:', error);
     } finally {
@@ -281,7 +281,7 @@ const HomePage = () => {
 
   // Process available times data from the API
   const processAvailableTimes = (availableTimes) => {
-    console.log("Processing available times:", availableTimes);
+    //console.log("Processing available times:", availableTimes);
     
     if (!availableTimes || !Array.isArray(availableTimes)) {
       console.warn("Available times is not an array:", availableTimes);
@@ -405,7 +405,7 @@ const HomePage = () => {
           return;
         }
       } catch (error) {
-        console.log("Search endpoint not available, using fallback...");
+        //console.log("Search endpoint not available, using fallback...");
       }
       
       // Fallback - fetch all restaurants and filter by availability
