@@ -1,24 +1,39 @@
-import React, { useState } from 'react';
-import './TableSelectionModel.css';
+import React from 'react';
+import './TableReservation.css';
 
+// Component to display available tables
 const TableSelection = ({ availableTables, onTableSelect, selectedTableId }) => {
+  if (!availableTables || availableTables.length === 0) {
+    return (
+      <div className="no-tables-available">
+        <p>No tables available for the selected time and party size.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="table-selection-container">
-      <h3 className="table-selection-title">Select a Table</h3>
-      
-      <div className="table-grid">
-        {availableTables.map(table => (
-          <div 
-            key={table.id || table._id}
-            className={`table-card ${selectedTableId === (table.id || table._id) ? 'selected' : ''}`}
+      <h3>Select a Table</h3>
+      <div className="table-simple-grid">
+        {availableTables.map((table) => (
+          <div
+            key={table._id || table.id}
+            className={`table-simple-card ${
+              selectedTableId === (table._id || table.id) ? 'selected' : ''
+            }`}
             onClick={() => onTableSelect(table)}
           >
-            <div className="table-card-header">
-              Table {table.table_number}
-            </div>
-            <div className="table-card-details">
-              <span className="table-shape">{table.shape}</span>
-              <span className="table-seats">{table.seats} seats</span>
+            <div className="table-number">Table {table.table_number}</div>
+            <div className="table-info">
+              <div className="table-section-label">
+                {table.section || 'Main'} Section
+              </div>
+              <div className="table-shape-label">
+                {table.shape || 'Standard'}
+              </div>
+              <div className="table-seats-label">
+                {table.seats} {table.seats === 1 ? 'seat' : 'seats'}
+              </div>
             </div>
           </div>
         ))}

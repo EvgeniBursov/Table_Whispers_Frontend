@@ -1,5 +1,5 @@
 {
-  "name": "tablewhispers_frontend_sprint_7",
+  "name": "tablewhispers_frontend_sprint_3",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -10,14 +10,10 @@
   },
   "dependencies": {
     "axios": "^1.7.9",
-    "date-fns": "^4.1.0",
-    "dotenv": "^16.5.0",
     "lucide-react": "^0.475.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.1.1",
-    "recharts": "^2.15.2",
-    "socket.io-client": "^4.8.1"
+    "react-router-dom": "^7.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
