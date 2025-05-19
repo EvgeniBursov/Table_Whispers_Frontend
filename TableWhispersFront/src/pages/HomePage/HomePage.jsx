@@ -194,8 +194,6 @@ const HomePage = () => {
   const fetchRecommendedRestaurants = async () => {
     try {
       const response = await fetch(`${API_URL}/all_Restaurants_Data`); 
-      ////console.log(import.meta.env.VITE_BACKEND_API)
-      //const response = await fetch(`https://tablewhispersback.azurewebsites.net/all_Restaurants_Data`);
       const data = await response.json();
       ////console.log("🔹 Data from server:", data);
 

@@ -11,6 +11,10 @@ const TableReservation = ({
   initialTime,
   initialPeople,
   initialTable,
+  tableId, 
+  tableNumber,
+  isManagementReservation=false,
+  isManagementReservationList=false,  
   onReservationComplete
 }) => {
     const [selectedPeople, setSelectedPeople] = useState(initialPeople || 2);
@@ -280,7 +284,7 @@ const TableReservation = ({
       }
       
       // Check terms agreement if a specific table is selected
-      if (selectedTable && !termsAgreed) {
+      if (selectedTable && !termsAgreed && !isManagementReservation) {
         setBookingError('Please agree to the table reservation terms');
         return false;
       }
@@ -334,11 +338,16 @@ const TableReservation = ({
           tableNumber: null // Explicitly set tableNumber to null by default
         };
         
-        // Add table selection only if explicitly selected
-        if (selectedTable && showTableSelection) {
-          requestBody.tableId = selectedTable.id || selectedTable._id;
-          requestBody.tableNumber = selectedTable.table_number;
-        }
+          if (selectedTable && showTableSelection) {
+            requestBody.tableId = selectedTable.id || selectedTable._id;
+            requestBody.tableNumber = selectedTable.table_number;
+          } else if (tableId) {
+            requestBody.tableId = tableId;
+            requestBody.tableNumber = tableNumber;
+          } else if (initialTable) {
+            requestBody.tableId = initialTable.id || initialTable._id;
+            requestBody.tableNumber = initialTable.table_number;
+          }
         
         // Always include email - either from logged in user or form input
         if (isLoggedIn) {
@@ -577,7 +586,7 @@ const TableReservation = ({
           )}
 
           {/* Show "Choose Your Table" button only for logged-in users */}
-          {!showTableSelection && selectedTime && isLoggedIn && (
+          {!showTableSelection && selectedTime && (isLoggedIn || (isManagementReservation && isManagementReservationList)) && (
             <div className="table-selection-proceed">
               <button 
                 type="button" 
@@ -591,7 +600,7 @@ const TableReservation = ({
           )}
 
           {/* Table selection component - only for logged in users */}
-          {showTableSelection && isLoggedIn && (
+          {showTableSelection && (isLoggedIn || (isManagementReservation && isManagementReservationList)) && (
             <div className="table-selection-wrapper">
               <TableSelection 
                 availableTables={availableTables}
@@ -600,7 +609,7 @@ const TableReservation = ({
               />
               
               {/* Terms agreement checkbox - only show when a table is selected */}
-              {selectedTable && (
+              {selectedTable && !isManagementReservation &&(
                 <div className="terms-agreement">
                   <label className="checkbox-container">
                     <input

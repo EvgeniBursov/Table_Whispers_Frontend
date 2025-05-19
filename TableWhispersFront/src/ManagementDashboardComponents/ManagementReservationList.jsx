@@ -217,8 +217,8 @@ const ManagementReservationList = ({
   const getTableDisplay = (reservation) => {
     // Check all possible places where table number might be stored
     const tableNumber = 
-      (reservation.orderDetails && reservation.orderDetails.tableNumber) || 
-      reservation.tableNumber || 
+      (reservation.orderDetails && reservation.orderDetails.table) || 
+      reservation.orderDetails.tableNumber || 
       null;
     
     if (tableNumber) {
@@ -425,7 +425,7 @@ const ManagementReservationList = ({
         title="No Reservations" 
         message="There are no reservations available for this restaurant." 
         actionText="Add Reservation" 
-        onAction={onAddReservation}
+        onAction={() => onAddReservation({ isManagementReservation: true, isManagementReservationList: true})}
       />
     );
   }
@@ -504,7 +504,7 @@ const ManagementReservationList = ({
             </button>
           )}
           
-          <button className="mng-add-reservation-btn" onClick={onAddReservation}>
+          <button className="mng-add-reservation-btn" onClick={() => onAddReservation({ isManagementReservation: true, isManagementReservationList: true })}>
             + Add Reservation
           </button>
         </div>

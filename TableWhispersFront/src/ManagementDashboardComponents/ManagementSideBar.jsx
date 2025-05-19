@@ -4,15 +4,15 @@ const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
 
 
-const ManagementSideBar = ({ activeView, setActiveView }) => {
+const ManagementSideBar = ({ activeView, setActiveView, restaurantId }) => {
   const [restaurantName, setRestaurantName] = useState('Loading...');
-  const restaurantId = '67937038eb604c7927e85d2a';
+  const restaurant_Id = restaurantId;
 
   useEffect(() => {
     const fetchRestaurantName = async () => {
       try {
 
-        const response = await fetch(`${API_URL}/restaurant/${restaurantId}`);
+        const response = await fetch(`${API_URL}/restaurant/${restaurant_Id}`);
         const data = await response.json();
         setRestaurantName(data.res_name)
       } catch (error) {
