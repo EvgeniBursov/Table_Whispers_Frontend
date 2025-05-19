@@ -1,0 +1,18 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/api/*",    
+      "/*.css",
+      "/*.js",
+      "/*.png",
+      "/*.svg"
+    ]
+  },
+  "routes": [
+    {
+      "route": "/survey/*",
+      "rewrite": "/index.html"
+    }
+  ]
+}
