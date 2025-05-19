@@ -427,8 +427,8 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
               <div className="mng-detail-row">
                 <div className="mng-detail-label">Table:</div>
                 <div className="mng-detail-value">
-                  {orderDetails.tableNumber ? (
-                    <span className="mng-table-number">Table {orderDetails.tableNumber}</span>
+                  {orderDetails.table ? (
+                    <span className="mng-table-number">Table {orderDetails.table}</span>
                   ) : (
                     <span className="mng-table-not-assigned">Not assigned</span>
                   )}

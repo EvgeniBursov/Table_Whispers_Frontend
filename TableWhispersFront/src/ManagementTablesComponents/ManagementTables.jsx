@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import io from 'socket.io-client';
 import './ManagementTables.css';
 const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
+import ManagementNewReservationForm from '../ManagementDashboardComponents/ManagementNewReservationForm'
 
 
 /**
@@ -53,6 +54,8 @@ const ManagementTables = ({ restaurantId }) => {
     client_name: '',
     guests: 2,
     start_time: '',
+    tableId: null,
+    tableNumber: null,
     date: formatDateForApi(new Date())
   });
   
@@ -629,7 +632,7 @@ const ManagementTables = ({ restaurantId }) => {
       const formattedStartTime = dateObj.toISOString();
       
       const requestData = {
-        table_id: selectedTable.id || selectedTable._id,
+        tableId: selectedTable.id || selectedTable._id,
         client_email: newReservationData.client_email,
         client_name: newReservationData.client_name,
         guests: newReservationData.guests,
@@ -661,6 +664,7 @@ const ManagementTables = ({ restaurantId }) => {
         client_name: '',
         guests: 2,
         start_time: '',
+        tableId: null,
         date: formatDateForApi(new Date())
       });
       setShowReservationForm(false);
@@ -765,20 +769,8 @@ const ManagementTables = ({ restaurantId }) => {
    */
   const handleMakeReservation = (table) => {
     setSelectedTable(table);
-    
-    // Set reservation default time to current time + 1 hour, rounded to nearest 30 min
-    const now = new Date();
-    now.setHours(now.getHours() + 1);
-    now.setMinutes(Math.ceil(now.getMinutes() / 30) * 30);
-    
-    const defaultTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    
-    setNewReservationData({
-      ...newReservationData,
-      start_time: defaultTime
-    });
-    
     setShowReservationForm(true);
+    
   };
   
   /**
@@ -1235,98 +1227,32 @@ const ManagementTables = ({ restaurantId }) => {
         </div>
       )}
       
-      {/* Add New Reservation Form Modal */}
       {showReservationForm && selectedTable && (
         <div className="mgt-modal-overlay">
           <div className="mgt-modal">
-            <div className="mgt-modal-header">
-              <h2>Create Reservation for Table {selectedTable.table_number}</h2>
-              <button className="mgt-modal-close" onClick={() => setShowReservationForm(false)}>×</button>
-            </div>
-            
-            <form className="mgt-reservation-form" onSubmit={handleAddReservation}>
-              <div className="mgt-form-group">
-                <label>Customer Email:</label>
-                <input 
-                  type="email" 
-                  name="client_email"
-                  value={newReservationData.client_email}
-                  onChange={handleNewReservationInputChange}
-                  required
-                  placeholder="customer@example.com"
-                />
-              </div>
-              
-              <div className="mgt-form-group">
-                <label>Customer Name:</label>
-                <input 
-                  type="text" 
-                  name="client_name"
-                  value={newReservationData.client_name}
-                  onChange={handleNewReservationInputChange}
-                  required
-                  placeholder="First Last"
-                />
-              </div>
-              
-              <div className="mgt-form-group">
-                <label>Number of Guests:</label>
-                <input 
-                  type="number" 
-                  name="guests"
-                  value={newReservationData.guests}
-                  onChange={handleNewReservationInputChange}
-                  min="1"
-                  max={selectedTable.seats}
-                  required
-                />
-                <small>Max {selectedTable.seats} for this table</small>
-              </div>
-              
-              <div className="mgt-form-row">
-                <div className="mgt-form-group">
-                  <label>Date:</label>
-                  <input 
-                    type="date" 
-                    name="date"
-                    value={newReservationData.date}
-                    onChange={handleNewReservationInputChange}
-                    required
-                  />
-                </div>
-                
-                <div className="mgt-form-group">
-                  <label>Time:</label>
-                  <input 
-                    type="time" 
-                    name="start_time"
-                    value={newReservationData.start_time}
-                    onChange={handleNewReservationInputChange}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="mgt-form-actions">
-                <button 
-                  type="button" 
-                  className="mgt-btn mgt-btn-cancel"
-                  onClick={() => setShowReservationForm(false)}
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  className="mgt-btn mgt-btn-save"
-                >
-                  Create Reservation
-                </button>
-              </div>
-            </form>
+            <ManagementNewReservationForm
+              restaurantId={restaurantId}
+              restaurantData={{
+                res_name: "Your Restaurant" 
+              }}
+              tableNumber={selectedTable}  
+              tableId={selectedTable.id || selectedTable._id}
+              isManagementReservation={true} 
+              isManagementReservationList={false}
+              onSave={(newReservation) => {
+                console.log("New reservation created:", newReservation);
+                setShowReservationForm(false);
+                setSelectedTable(null);
+                fetchTables();
+              }}
+              onCancel={() => {
+                setShowReservationForm(false);
+                setSelectedTable(null);
+              }}
+            />
           </div>
         </div>
       )}
-      
       {/* Table Details Modal */}
       {selectedTable && !showReservationForm && !showAddForm && (
         <div className="mgt-modal-overlay">

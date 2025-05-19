@@ -598,7 +598,7 @@ const RestaurantManagementDashboard = ({restaurantId}) => {
   
   return (
     <div className="mng-dashboard-container">
-      <MngSidebar activeView={activeView} setActiveView={setActiveView} />
+      <MngSidebar activeView={activeView} setActiveView={setActiveView} restaurantId={restaurantId}/>
       <div className="mng-main-content">
         <MngHeader 
           restaurant={restaurantData} 
@@ -613,6 +613,8 @@ const RestaurantManagementDashboard = ({restaurantId}) => {
             <MngNewReservationForm 
               restaurantId={restaurantId}
               restaurantData={restaurantData}
+              isManagementReservation={true}
+              isManagementReservationList={true}
               onSave={handleAddReservation}
               onCancel={() => setShowReservationForm(false)}
             />
