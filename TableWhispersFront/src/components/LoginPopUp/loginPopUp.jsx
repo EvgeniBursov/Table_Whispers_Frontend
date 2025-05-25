@@ -173,7 +173,9 @@ const LoginPopUp = ({ setShowLogin }) => {
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const payload = JSON.parse(window.atob(base64));
         console.log("[AUTH] User logged in:", payload.email);
-        localStorage.setItem("userEmail", payload.email);
+       const email1 = payload.email || payload.user_email || payload.username || payload.sub || formData.email;
+
+        localStorage.setItem("userEmail", email1);
       } catch (error) {
         console.error("[AUTH] Error extracting email from token:", error);
       }

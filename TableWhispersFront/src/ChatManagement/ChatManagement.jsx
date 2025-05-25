@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import io from 'socket.io-client';
 import './ChatManagement.css';
-const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
 const ChatManagement = ({ restaurantId }) => {
   const [customers, setCustomers] = useState([]);
@@ -13,22 +13,59 @@ const ChatManagement = ({ restaurantId }) => {
   const [error, setError] = useState(null);
   const [socket, setSocket] = useState(null);
   const messagesEndRef = useRef(null);
+  const processedMessagesRef = useRef(new Set());
+
+  // Helper function to update customers list
+  const updateCustomersList = useCallback((message) => {
+    setCustomers(prev => {
+      const customerIndex = prev.findIndex(c => 
+        (message.order_id === c.order_id) && 
+        ((message.sender_type === 'customer' && c.customerEmail === message.user_sender_email) ||
+         (message.recipient_type === 'customer' && c.customerEmail === message.user_recipient_email))
+      );
+      
+      if (customerIndex !== -1) {
+        const updatedCustomers = [...prev];
+        const updatedCustomer = {
+          ...updatedCustomers[customerIndex],
+          lastMessage: {
+            id: message._id,
+            content: message.content,
+            timestamp: message.timestamp,
+            sender_type: message.sender_type
+          }
+        };
+        
+        // Increment unread count for customer messages when not viewing this chat
+        if (message.sender_type === 'customer' && 
+            (!selectedCustomer || 
+             selectedCustomer.order_id !== message.order_id || 
+             selectedCustomer.customerEmail !== message.user_sender_email)) {
+          updatedCustomer.unreadCount = (updatedCustomer.unreadCount || 0) + 1;
+        }
+        
+        updatedCustomers.splice(customerIndex, 1);
+        return [updatedCustomer, ...updatedCustomers];
+      }
+      
+      return prev;
+    });
+  }, [selectedCustomer]);
 
   // Initialize socket connection
   useEffect(() => {
-    const socketUrl = `${API_URL}`;
-    const newSocket = io(socketUrl);
-    
+    const newSocket = io(API_URL);
     setSocket(newSocket);
     
     newSocket.on('connect', () => {
       console.log('Socket connected');
-      
-      // Join restaurant room
       newSocket.emit('joinRestaurantRoom', { restaurantId });
     });
     
-    // Clean up on component unmount
+    newSocket.on('disconnect', () => {
+      console.log('Socket disconnected');
+    });
+
     return () => {
       if (newSocket) {
         newSocket.emit('leaveRestaurantRoom', { restaurantId });
@@ -37,15 +74,14 @@ const ChatManagement = ({ restaurantId }) => {
     };
   }, [restaurantId]);
 
+  // Join order room when customer is selected
   useEffect(() => {
-    if (!socket || !selectedCustomer || !selectedCustomer.order_id) return;
+    if (!socket || !selectedCustomer?.order_id) return;
     
-    // Join order-specific room
     const orderId = selectedCustomer.order_id;
     socket.emit('joinOrderRoom', { orderId });
     console.log(`Joined order room: ${orderId}`);
     
-    // Cleanup when selected customer changes or component unmounts
     return () => {
       socket.emit('leaveOrderRoom', { orderId });
     };
@@ -54,18 +90,15 @@ const ChatManagement = ({ restaurantId }) => {
   // Socket event listeners for real-time updates
   useEffect(() => {
     if (!socket) return;
-    const processedMessages = new Set();
 
     const handleNewMessage = (message) => {
       console.log('Received new message:', message);
       
-      // Skip if already processed
-      if (processedMessages.has(message._id)) return;
+      // Prevent duplicate processing
+      if (processedMessagesRef.current.has(message._id)) return;
+      processedMessagesRef.current.add(message._id);
       
-      // Mark as processed
-      processedMessages.add(message._id);
-      
-      // If we're viewing this chat
+      // Update messages if viewing this customer's chat
       if (selectedCustomer && message.order_id === selectedCustomer.order_id) {
         setMessages(prev => [...prev, message]);
         
@@ -75,116 +108,46 @@ const ChatManagement = ({ restaurantId }) => {
         }
       }
       
-      // Update sidebar list
+      // Update sidebar
       updateCustomersList(message);
     };
     
-    // Handler for our own sent messages
     const handleMessageSent = (message) => {
       console.log('Message sent confirmation:', message);
       
-      // Skip if already processed
-      if (processedMessages.has(message._id)) return;
+      if (processedMessagesRef.current.has(message._id)) return;
+      processedMessagesRef.current.add(message._id);
       
-      // Mark as processed
-      processedMessages.add(message._id);
-      
-      // If we're viewing this chat
       if (selectedCustomer && message.order_id === selectedCustomer.order_id) {
         setMessages(prev => [...prev, message]);
       }
       
-      // Update sidebar list
       updateCustomersList(message);
     };
     
-    // Register event handlers
-    socket.on('newMessage', handleNewMessage);
-    socket.on('messageSent', handleMessageSent);
-    // Listen for new messages
-    socket.on('newMessage', (message) => {
-      console.log('Received new message:', message);
-      
-      // Update messages if currently viewing this customer's chat
-      if (selectedCustomer && 
-          message.order_id === selectedCustomer.order_id &&
-          ((message.sender_type === 'customer' && message.user_sender_email === selectedCustomer.customerEmail) ||
-           (message.recipient_type === 'customer' && message.user_recipient_email === selectedCustomer.customerEmail))) {
-        
-        setMessages(prev => [...prev, message]);
-        
-        // Mark received messages as read if they're from a customer
-        if (message.sender_type === 'customer') {
-          socket.emit('markMessageRead', { messageId: message._id });
-        }
-      }
-      
-      // Update customers list to show new message in the sidebar
-      setCustomers(prev => {
-        // First, check if this message is related to one of our customer chats
-        const customerIndex = prev.findIndex(c => 
-          (message.order_id === c.order_id) && 
-          ((message.sender_type === 'customer' && c.customerEmail === message.user_sender_email) ||
-           (message.recipient_type === 'customer' && c.customerEmail === message.user_recipient_email))
-        );
-        
-        if (customerIndex !== -1) {
-          // Create a copy of the customers array
-          const updatedCustomers = [...prev];
-          
-          // Update the customer with new message info
-          const updatedCustomer = {
-            ...updatedCustomers[customerIndex],
-            lastMessage: {
-              id: message._id,
-              content: message.content,
-              timestamp: message.timestamp,
-              sender_type: message.sender_type
-            }
-          };
-          
-          // If this is a new message from the customer and we're not viewing their chat,
-          // increment the unread count
-          if (message.sender_type === 'customer' && 
-              (!selectedCustomer || 
-               selectedCustomer.order_id !== message.order_id || 
-               selectedCustomer.customerEmail !== message.user_sender_email)) {
-            updatedCustomer.unreadCount = (updatedCustomer.unreadCount || 0) + 1;
-          }
-          
-          // Remove from current position
-          updatedCustomers.splice(customerIndex, 1);
-          
-          // Add to top of list (most recent message first)
-          return [updatedCustomer, ...updatedCustomers];
-        }
-        
-        // If this is a message for a new customer we don't have in our list yet,
-        // we'll get it next time we refresh the customer list
-        return prev;
-      });
-    });
-    
-    // Listen for read receipts
-    socket.on('messageRead', (data) => {
+    const handleMessageRead = (data) => {
       console.log('Message read:', data);
-      
       setMessages(prev => 
         prev.map(msg => 
           msg._id === data.messageId ? { ...msg, read: true } : msg
         )
       );
-    });
+    };
     
-    // Clean up event listeners on unmount or when dependencies change
+    // Register event handlers
+    socket.on('newMessage', handleNewMessage);
+    socket.on('messageSent', handleMessageSent);
+    socket.on('messageRead', handleMessageRead);
+    
+    // Cleanup
     return () => {
       socket.off('newMessage', handleNewMessage);
       socket.off('messageSent', handleMessageSent);
-      socket.off('messageRead');
+      socket.off('messageRead', handleMessageRead);
     };
-  }, [socket, selectedCustomer]);
+  }, [socket, selectedCustomer, updateCustomersList]);
   
-  // Load customer chats when component mounts
+  // Load customer chats
   useEffect(() => {
     const fetchCustomerChats = async () => {
       try {
@@ -210,22 +173,25 @@ const ChatManagement = ({ restaurantId }) => {
       }
     };
     
-    fetchCustomerChats();
-    
-    // Set up periodic refresh
-    const refreshInterval = setInterval(fetchCustomerChats, 60000); // Refresh every minute
-    
-    return () => clearInterval(refreshInterval);
+    if (restaurantId) {
+      fetchCustomerChats();
+      
+      // Set up periodic refresh
+      const refreshInterval = setInterval(fetchCustomerChats, 60000);
+      return () => clearInterval(refreshInterval);
+    }
   }, [restaurantId]);
   
-  // Load chat history when a customer is selected
+  // Load chat history when customer is selected
   useEffect(() => {
     const fetchChatHistory = async () => {
-      if (!selectedCustomer) return;
+      if (!selectedCustomer || !socket) return;
       
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/chat_history/${selectedCustomer.order_id}/${selectedCustomer.customerEmail}`);
+        const response = await fetch(
+          `${API_URL}/chat_history/${selectedCustomer.order_id}/${selectedCustomer.customerEmail}`
+        );
         
         if (!response.ok) {
           throw new Error('Failed to fetch chat history');
@@ -237,17 +203,15 @@ const ChatManagement = ({ restaurantId }) => {
           setMessages(data.messages);
           
           // Reset unread count for this customer
-          setCustomers(prev => {
-            return prev.map(c => {
-              if (c.order_id === selectedCustomer.order_id && 
-                  c.customerEmail === selectedCustomer.customerEmail) {
-                return { ...c, unreadCount: 0 };
-              }
-              return c;
-            });
-          });
+          setCustomers(prev => prev.map(c => {
+            if (c.order_id === selectedCustomer.order_id && 
+                c.customerEmail === selectedCustomer.customerEmail) {
+              return { ...c, unreadCount: 0 };
+            }
+            return c;
+          }));
           
-          // Mark all unread messages from this customer as read
+          // Mark unread messages as read
           data.messages.forEach(msg => {
             if (msg.sender_type === 'customer' && !msg.read) {
               socket.emit('markMessageRead', { messageId: msg._id });
@@ -264,43 +228,37 @@ const ChatManagement = ({ restaurantId }) => {
       }
     };
     
-    if (socket && selectedCustomer) {
-      fetchChatHistory();
-    }
+    fetchChatHistory();
   }, [selectedCustomer, socket]);
   
-  // Scroll to bottom of messages when they change
+  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  // Send a new message
-  const handleSendMessage = () => {
+  const handleSendMessage = useCallback(() => {
     if (!newMessage.trim() || !selectedCustomer || !socket) return;
     
     const messageData = {
       order_id: selectedCustomer.order_id,
       sender_type: 'restaurant',
       restaurant_sender_id: restaurantId,
-      sender_name: 'Restaurant Staff', // This could be the actual staff member's name
+      sender_name: 'Restaurant Staff',
       recipient_type: 'customer',
       user_recipient_email: selectedCustomer.customerEmail,
       content: newMessage
     };
     
     console.log('Sending message:', messageData);
-    
-    // Send message through socket
     socket.emit('sendMessage', messageData);
-    
-    // Clear input
     setNewMessage('');
-  };
+  }, [newMessage, selectedCustomer, socket, restaurantId]);
   
-  // Handler for selecting a customer
-  const handleSelectCustomer = (customer) => {
+  const handleSelectCustomer = useCallback((customer) => {
     setSelectedCustomer(customer);
-  };
+    // Clear processed messages when switching customers
+    processedMessagesRef.current.clear();
+  }, []);
   
   if (error) {
     return <div className="mng-chat-error">Error: {error}</div>;
@@ -321,19 +279,21 @@ const ChatManagement = ({ restaurantId }) => {
             customers.map(customer => (
               <div 
                 key={`${customer.order_id}-${customer.customerEmail}`}
-                className={`mng-chat-customer ${selectedCustomer?.order_id === customer.order_id && 
-                                               selectedCustomer?.customerEmail === customer.customerEmail ? 'active' : ''}`}
+                className={`mng-chat-customer ${
+                  selectedCustomer?.order_id === customer.order_id && 
+                  selectedCustomer?.customerEmail === customer.customerEmail ? 'active' : ''
+                }`}
                 onClick={() => handleSelectCustomer(customer)}
               >
                 <div className="mng-chat-customer-avatar">
                   {customer.customerInfo?.profileImage ? (
                     <img 
                       src={`${API_URL}${customer.customerInfo.profileImage}`} 
-                      alt={`${customer.customerInfo?.firstName || 'Customer'}`} 
+                      alt={customer.customerInfo?.firstName || 'Customer'} 
                     />
                   ) : (
                     <div className="mng-chat-avatar-placeholder">
-                      {(customer.customerInfo?.firstName?.[0] || 'C')}
+                      {customer.customerInfo?.firstName?.[0] || 'C'}
                     </div>
                   )}
                 </div>
@@ -387,12 +347,12 @@ const ChatManagement = ({ restaurantId }) => {
                 {selectedCustomer.customerInfo?.profileImage ? (
                   <img 
                     src={`${API_URL}${selectedCustomer.customerInfo.profileImage}`} 
-                    alt={`${selectedCustomer.customerInfo?.firstName || 'Customer'}`} 
+                    alt={selectedCustomer.customerInfo?.firstName || 'Customer'} 
                     className="mng-chat-header-avatar"
                   />
                 ) : (
                   <div className="mng-chat-header-avatar-placeholder">
-                    {(selectedCustomer.customerInfo?.firstName?.[0] || 'C')}
+                    {selectedCustomer.customerInfo?.firstName?.[0] || 'C'}
                   </div>
                 )}
                 <div className="mng-chat-header-details">

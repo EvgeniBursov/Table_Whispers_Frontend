@@ -205,7 +205,7 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
   const handleSelectHistoryReservation = (historyReservation) => {
     console.log('Selected reservation from history:', historyReservation);
   };
-  
+  console.log(orderDetails)
   return (
     <div className="mng-reservation-detail-container">
       <div className="mng-detail-header">

@@ -42,7 +42,7 @@ const ClientProfile = () => {
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
   const email = localStorage.getItem("userEmail");
-
+  
   // Initialize socket connection
   useEffect(() => {
     // Create socket instance
@@ -351,6 +351,10 @@ const ClientProfile = () => {
       return normalizedCompare(order.status, status);
     });
     
+
+    if (status === "Planning") {
+      return filteredOrders.sort((a, b) => new Date(a.orderDate) - new Date(b.orderDate));
+    }
     return filteredOrders.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
   };
 
