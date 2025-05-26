@@ -3,19 +3,54 @@ import './ManagementDashboardCSS/MngReservationDetail.css';
 import CustomerReservationHistory from './ManagementCustomerReservationHistory';
 import BillModal from '../components/Bills/Bills'; 
 
-
-import { 
-  formatTime24h, 
-  formatDate, 
-  calculateDuration,
-  convertToIsraelTime,
-  getCurrentDateInIsrael,
-  createDateInIsrael
-} from '../../timeUtils'; 
-
 const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
 const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, loading }) => {
+  const formatTime24hWithoutTimezone = (dateString) => {
+    const date = new Date(dateString);
+    const hours = date.getUTCHours().toString().padStart(2, '0');
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
+  const formatDateWithoutTimezone = (dateString) => {
+    const date = new Date(dateString);
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const calculateDurationWithoutTimezone = (startTime, endTime) => {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const diffInMinutes = Math.round((end - start) / (1000 * 60));
+    const hours = Math.floor(diffInMinutes / 60);
+    const minutes = diffInMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
+  const getCurrentDateWithoutTimezone = () => {
+    const today = new Date();
+    const year = today.getUTCFullYear();
+    const month = String(today.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(today.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const convertFromUTCTime = (dateString) => {
+    const date = new Date(dateString);
+    const dateStr = formatDateWithoutTimezone(dateString);
+    const timeStr = formatTime24hWithoutTimezone(dateString);
+    return { date: dateStr, time: timeStr };
+  };
+
+  const createUTCDate = (dateStr, timeStr) => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return new Date(Date.UTC(year, month - 1, day, hours, minutes, 0, 0));
+  };
+
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState({
     date: '',
@@ -27,7 +62,6 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
   
-  // State for bill modal
   const [selectedBill, setSelectedBill] = useState(null);
 
   if (!reservation) return null;
@@ -39,20 +73,17 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
                        Array.isArray(customer.allergies) &&
                        customer.allergies.length > 0;
 
-  // Handler to view bill - updated to better match client profile implementation
   const handleViewBill = () => {
-    // Using reservation.id as the orderId for the BillModal
     setSelectedBill(reservation.id);
   };
 
-  // Handler to close bill
   const handleCloseBill = () => {
     setSelectedBill(null);
   };
 
   const handleEditClick = () => {
     if (orderDetails.startTime) {
-      const { date, time } = convertToIsraelTime(orderDetails.startTime);
+      const { date, time } = convertFromUTCTime(orderDetails.startTime);
       
       setEditFormData({
         date: date,
@@ -96,10 +127,10 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
     setFormError('');
     
     try {
-      const startTime = createDateInIsrael(editFormData.date, editFormData.time);
+      const startTime = createUTCDate(editFormData.date, editFormData.time);
       
       const endTime = new Date(startTime);
-      endTime.setHours(endTime.getHours() + 2);
+      endTime.setUTCHours(endTime.getUTCHours() + 2);
       
       const startTimeISO = startTime.toISOString();
       const endTimeISO = endTime.toISOString();
@@ -129,7 +160,6 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
         return;
       }
       
-      // This will notify the parent component (likely ManagementReservationList)
       if (onUpdateStatus) {
         onUpdateStatus('update', {
           id: reservation.id,
@@ -205,7 +235,6 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
         <div className="mng-detail-section">
           <h3>Customer Information</h3>
           
-          {/* Enhanced Customer Profile Section */}
           <div className="mng-customer-profile-section">
             {customer.userType === "registered" && (
               <div className="mng-customer-image-container">
@@ -318,7 +347,7 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
                   name="date"
                   value={editFormData.date}
                   onChange={handleInputChange}
-                  min={getCurrentDateInIsrael()} 
+                  min={getCurrentDateWithoutTimezone()} 
                   required
                 />
               </div>
@@ -389,11 +418,11 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
                 <>
                   <div className="mng-detail-row">
                     <div className="mng-detail-label">Date:</div>
-                    <div className="mng-detail-value">{formatDate(orderDetails.startTime)}</div>
+                    <div className="mng-detail-value">{formatDateWithoutTimezone(orderDetails.startTime)}</div>
                   </div>
                   <div className="mng-detail-row">
                     <div className="mng-detail-label">Time:</div>
-                    <div className="mng-detail-value">{formatTime24h(orderDetails.startTime)}</div>
+                    <div className="mng-detail-value">{formatTime24hWithoutTimezone(orderDetails.startTime)}</div>
                   </div>
                 </>
               )}
@@ -401,14 +430,14 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
               {orderDetails.endTime && (
                 <div className="mng-detail-row">
                   <div className="mng-detail-label">End Time:</div>
-                  <div className="mng-detail-value">{formatTime24h(orderDetails.endTime)}</div>
+                  <div className="mng-detail-value">{formatTime24hWithoutTimezone(orderDetails.endTime)}</div>
                 </div>
               )}
               
               {orderDetails.startTime && orderDetails.endTime && (
                 <div className="mng-detail-row">
                   <div className="mng-detail-label">Duration:</div>
-                  <div className="mng-detail-value">{calculateDuration(orderDetails.startTime, orderDetails.endTime)}</div>
+                  <div className="mng-detail-value">{calculateDurationWithoutTimezone(orderDetails.startTime, orderDetails.endTime)}</div>
                 </div>
               )}
               
@@ -440,7 +469,7 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
               {orderDetails.orderDate && (
                 <div className="mng-detail-row">
                   <div className="mng-detail-label">Order Date:</div>
-                  <div className="mng-detail-value">{formatDate(orderDetails.orderDate)}</div>
+                  <div className="mng-detail-value">{formatDateWithoutTimezone(orderDetails.orderDate)}</div>
                 </div>
               )}
             </div>
@@ -459,7 +488,6 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
               Edit Reservation
             </button>
             
-            {/* View Bill Button for seated or done orders */}
             {(['seated', 'done'].includes(orderDetails.status?.toLowerCase())) && (
               <button 
                 className="mng-action-btn mng-bill-btn"
@@ -512,7 +540,6 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
         )}
       </div>
       
-      {/* Bill Modal Component */}
       {selectedBill && (
         <BillModal 
           orderId={selectedBill} 

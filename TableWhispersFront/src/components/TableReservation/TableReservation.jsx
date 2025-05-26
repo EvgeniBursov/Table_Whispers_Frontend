@@ -17,6 +17,22 @@ const TableReservation = ({
   isManagementReservationList=false,  
   onReservationComplete
 }) => {
+    const formatDateWithoutTimezone = (date) => {
+      const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                     'July', 'August', 'September', 'October', 'November', 'December'];
+      
+      return `${weekdays[date.getUTCDay()]}, ${months[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+    };
+
+    const formatTimeWithoutTimezone = (date) => {
+      const hours = date.getUTCHours();
+      const minutes = date.getUTCMinutes();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    };
+
     const [selectedPeople, setSelectedPeople] = useState(initialPeople || 2);
     const [selectedDate, setSelectedDate] = useState(initialDate || new Date().toISOString().split("T")[0]);
     const [selectedTime, setSelectedTime] = useState(initialTime || '');
@@ -30,32 +46,27 @@ const TableReservation = ({
     const [availableTimes, setAvailableTimes] = useState([]);
     const [availableTables, setAvailableTables] = useState([]);
     const [restaurantData, setRestaurantData] = useState(null);
-    const [tableAvailability, setTableAvailability] = useState({}); // Table availability info
+    const [tableAvailability, setTableAvailability] = useState({});
     const [showTableSelection, setShowTableSelection] = useState(false);
     const [termsAgreed, setTermsAgreed] = useState(false);
     
-    // Guest information fields
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [guestName, setGuestName] = useState('');
     const [guestEmail, setGuestEmail] = useState('');
     const [guestPhone, setGuestPhone] = useState('');
     
-    // Check login status on component mount
     useEffect(() => {
       const token = localStorage.getItem('token');
       const userEmail = localStorage.getItem('userEmail');
       setIsLoggedIn(!!token && !!userEmail);
       
-      // If user is logged in, pre-fill the email to ensure it's always sent
       if (!!token && !!userEmail) {
         setGuestEmail(userEmail);
       }
 
-      // Fetch restaurant data on mount
       fetchRestaurantData();
     }, []);
 
-    // When initialTable is provided, set it
     useEffect(() => {
       if (initialTable) {
         setSelectedTable(initialTable);
@@ -63,7 +74,6 @@ const TableReservation = ({
       }
     }, [initialTable]);
 
-    // Fetch restaurant data from the server
     const fetchRestaurantData = async () => {
       try {
         setLoadingTimes(true);
@@ -71,7 +81,6 @@ const TableReservation = ({
         const data = await response.json();
         setRestaurantData(data);
 
-        // Load times for today initially
         if (data) {
           updateTimesForSelectedDay(selectedDate, data);
         }
@@ -83,14 +92,12 @@ const TableReservation = ({
       }
     };
 
-    // Update times when date changes
     useEffect(() => {
       if (restaurantData && selectedDate) {
         updateTimesForSelectedDay(selectedDate, restaurantData);
       }
     }, [selectedDate, selectedPeople]);
 
-    // Helper function to convert "11:00 AM" to 24-hour format "11:00"
     const convertTo24Hour = (timeString) => {
       const [timePart, meridiem] = timeString.split(' ');
       let [hours, minutes] = timePart.split(':').map(Number);
@@ -104,7 +111,6 @@ const TableReservation = ({
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     };
 
-    // Helper function to convert 24-hour format "14:30" to "2:30 PM" for backend
     const convertTo12Hour = (timeString) => {
       const [hours24, minutes] = timeString.split(':').map(Number);
       const hours12 = hours24 % 12 || 12;
@@ -112,53 +118,42 @@ const TableReservation = ({
       return `${hours12}:${minutes.toString().padStart(2, '0')} ${meridiem}`;
     };
 
-    // Get the available times for the selected day from restaurant data
     const updateTimesForSelectedDay = (date, restaurant) => {
       setLoadingTimes(true);
       
       try {
-        // Get day of week from the selected date
         const dateObj = new Date(date);
         const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const dayOfWeek = daysOfWeek[dateObj.getDay()];
         
-        // Check if restaurant has open_time data for this day
         if (restaurant.open_time && restaurant.open_time[dayOfWeek]) {
           const dayHours = restaurant.open_time[dayOfWeek];
           
           if (dayHours.open === 'Closed' || !dayHours.open || !dayHours.close) {
-            // Restaurant is closed this day
             setAvailableTimes([]);
             setSelectedTime('');
           } else {
-            // Convert from AM/PM format to 24h format
             const openTime24h = convertTo24Hour(dayHours.open);
             const closeTime24h = convertTo24Hour(dayHours.close);
             
-            // Generate time slots every 30 minutes
             const slots = generateTimeSlots(openTime24h, closeTime24h);
             
-            // Add mock availability data - we'll enhance this with real data later
             const availabilityMap = {};
             slots.forEach(slot => {
-              // Simulate different availability levels
-              const randomAvailability = Math.floor(Math.random() * 4) + 1; // 1-4 tables
+              const randomAvailability = Math.floor(Math.random() * 4) + 1;
               availabilityMap[slot] = randomAvailability;
             });
             setTableAvailability(availabilityMap);
             
             setAvailableTimes(slots);
             
-            // If initial time is provided and valid, use it
             if (initialTime && slots.includes(initialTime)) {
               setSelectedTime(initialTime);
             } else if (slots.length > 0) {
-              // Otherwise, set first time slot as default selection
               setSelectedTime(slots[0]);
             }
           }
         } else {
-          // No time data for this day
           setAvailableTimes([]);
           setSelectedTime('');
         }
@@ -170,47 +165,37 @@ const TableReservation = ({
       setLoadingTimes(false);
     };
 
-    // Helper function to generate time slots in 24h format
     const generateTimeSlots = (openTime24h, closeTime24h) => {
       const slots = [];
       
-      // Parse the opening time (e.g., "11:00")
       let [openHours, openMinutes] = openTime24h.split(':').map(Number);
       
-      // Parse the closing time (e.g., "22:00")
       let [closeHours, closeMinutes] = closeTime24h.split(':').map(Number);
       
-      // Create date objects for easier time manipulation
       const startTime = new Date();
       startTime.setHours(openHours, openMinutes, 0, 0);
       
       const endTime = new Date();
       endTime.setHours(closeHours, closeMinutes, 0, 0);
       
-      // Last slot should be 90 minutes before closing (standard reservation duration)
       const lastPossibleSlot = new Date(endTime);
       lastPossibleSlot.setMinutes(lastPossibleSlot.getMinutes() - 90);
       
-      // Generate slots every 30 minutes
       const currentSlot = new Date(startTime);
       
       while (currentSlot <= lastPossibleSlot) {
-        // Format time in 24-hour format
         const hours = currentSlot.getHours().toString().padStart(2, '0');
         const minutes = currentSlot.getMinutes().toString().padStart(2, '0');
         
-        // Format as HH:MM
         const timeStr = `${hours}:${minutes}`;
         slots.push(timeStr);
         
-        // Move to next 30-minute slot
         currentSlot.setMinutes(currentSlot.getMinutes() + 30);
       }
       
       return slots;
     };
 
-    // Helper function to get availability class
     const getAvailabilityClass = (time) => {
       const tablesAvailable = tableAvailability[time];
       if (!tablesAvailable) return '';
@@ -219,7 +204,6 @@ const TableReservation = ({
       return 'low-availability';
     };
 
-    // Fetch available tables for the selected time
     const fetchAvailableTables = async () => {
       if (!selectedTime || !selectedDate) {
         setBookingError('Please select a date and time first');
@@ -255,22 +239,18 @@ const TableReservation = ({
       }
     };
 
-    // When time is selected, fetch available tables
     useEffect(() => {
       if (selectedTime && showTableSelection) {
         fetchAvailableTables();
       }
     }, [selectedTime, showTableSelection]);
 
-    // Form validation for guest information
     const validateGuestInfo = () => {
-      // Always require email (for all types of users)
       if (!guestEmail.trim() || !guestEmail.includes('@')) {
         setBookingError('Please enter a valid email');
         return false;
       }
       
-      // Only require additional info for non-logged in users
       if (!isLoggedIn) {
         if (!guestName.trim()) {
           setBookingError('Please enter your name');
@@ -283,7 +263,6 @@ const TableReservation = ({
         }
       }
       
-      // Check terms agreement if a specific table is selected
       if (selectedTable && !termsAgreed && !isManagementReservation) {
         setBookingError('Please agree to the table reservation terms');
         return false;
@@ -292,22 +271,18 @@ const TableReservation = ({
       return true;
     };
 
-    // Direct reservation form submission
     const handleSubmit = (e) => {
       e.preventDefault();
       
-      // Validate guest information
       if (!validateGuestInfo()) {
         return;
       }
       
-      // Check if time is selected
       if (!selectedTime) {
         setBookingError('Please select a time');
         return;
       }
       
-      // Create a reservation with the selected time
       const timeSlot = {
         time: selectedTime
       };
@@ -315,27 +290,23 @@ const TableReservation = ({
       handleBooking(timeSlot);
     };
 
-    // Make reservation
     const handleBooking = async (slot) => {
       setIsLoading(true);
       setBookingError(null);
       
       try {
-        // Convert selected date to day of week
         const selectedDay = new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
         
-        // Convert from 24-hour format to 12-hour format for the backend
         const time12h = convertTo12Hour(slot.time);
         
-        // Build the request body
         const requestBody = {
           restaurant_Id: restaurantId,
-          time: time12h, // Send in 12-hour format for the backend
+          time: time12h,
           day: selectedDay,
           guests: parseInt(selectedPeople),
           date: selectedDate,
-          tableId: null, // Explicitly set tableId to null by default
-          tableNumber: null // Explicitly set tableNumber to null by default
+          tableId: null,
+          tableNumber: null
         };
         
           if (selectedTable && showTableSelection) {
@@ -349,11 +320,9 @@ const TableReservation = ({
             requestBody.tableNumber = initialTable.table_number;
           }
         
-        // Always include email - either from logged in user or form input
         if (isLoggedIn) {
           requestBody.user_email = localStorage.getItem('userEmail');
         } else {
-          // For guest users, provide email for checking and full guest info
           requestBody.user_email = guestEmail;
           requestBody.guestInfo = {
             full_name: guestName,
@@ -379,7 +348,6 @@ const TableReservation = ({
           setReservationStatus('success');
           setReservationDetails(data.reservation);
           
-          // Call the callback if provided
           if (onReservationComplete) {
             onReservationComplete(data.reservation);
           }
@@ -394,14 +362,12 @@ const TableReservation = ({
       }
     };
     
-    // Reset booking form
     const handleReset = () => {
       setReservationStatus(null);
       setReservationDetails(null);
       setBookingError(null);
     };
 
-    // Handle proceeding to table selection
     const handleProceedToTableSelection = () => {
       if (!selectedTime) {
         setBookingError('Please select a time first');
@@ -411,32 +377,19 @@ const TableReservation = ({
       fetchAvailableTables();
     };
 
-    // Handle selecting a table
     const handleTableSelection = (table) => {
       setSelectedTable(table);
     };
   
-    // Render confirmation screen
     const renderConfirmation = () => {
       if (!reservationDetails) return null;
       
-      // Format the date
       const reservationDate = reservationDetails.start_time 
         ? new Date(reservationDetails.start_time) 
         : new Date(selectedDate);
       
-      const formattedDate = reservationDate.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-      
-      // Format the time
-      const formattedTime = reservationDate.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit'
-      });
+      const formattedDate = formatDateWithoutTimezone(reservationDate);
+      const formattedTime = formatTimeWithoutTimezone(reservationDate);
       
       return (
         <div className="reservation-confirmation">
@@ -496,7 +449,6 @@ const TableReservation = ({
       );
     };
   
-    // If reservation was successful, show confirmation
     if (reservationStatus === 'success') {
       return renderConfirmation();
     }
@@ -517,7 +469,6 @@ const TableReservation = ({
                 value={selectedPeople}
                 onChange={(e) => {
                   setSelectedPeople(e.target.value);
-                  // Reset table selection if guest count changes
                   setSelectedTable(null);
                   setShowTableSelection(false);
                 }}
@@ -541,7 +492,6 @@ const TableReservation = ({
                 min={new Date().toISOString().split("T")[0]}
                 onChange={(e) => {
                   setSelectedDate(e.target.value);
-                  // Reset table selection if date changes
                   setSelectedTable(null);
                   setShowTableSelection(false);
                 }}
@@ -554,7 +504,6 @@ const TableReservation = ({
                 value={selectedTime}
                 onChange={(e) => {
                   setSelectedTime(e.target.value);
-                  // Reset table selection if time changes
                   setSelectedTable(null);
                   setShowTableSelection(false);
                 }}
@@ -585,7 +534,6 @@ const TableReservation = ({
             </div>
           )}
 
-          {/* Show "Choose Your Table" button only for logged-in users */}
           {!showTableSelection && selectedTime && (isLoggedIn || (isManagementReservation && isManagementReservationList)) && (
             <div className="table-selection-proceed">
               <button 
@@ -599,7 +547,6 @@ const TableReservation = ({
             </div>
           )}
 
-          {/* Table selection component - only for logged in users */}
           {showTableSelection && (isLoggedIn || (isManagementReservation && isManagementReservationList)) && (
             <div className="table-selection-wrapper">
               <TableSelection 
@@ -608,7 +555,6 @@ const TableReservation = ({
                 selectedTableId={selectedTable ? (selectedTable.id || selectedTable._id) : null}
               />
               
-              {/* Terms agreement checkbox - only show when a table is selected */}
               {selectedTable && !isManagementReservation &&(
                 <div className="terms-agreement">
                   <label className="checkbox-container">
@@ -629,7 +575,6 @@ const TableReservation = ({
             </div>
           )}
 
-          {/* Email field is always required */}
           <div className="input-group email-field">
             <label>Email</label>
             <input 
@@ -638,12 +583,11 @@ const TableReservation = ({
               onChange={(e) => setGuestEmail(e.target.value)}
               placeholder="Enter your email"
               required
-              disabled={isLoggedIn} // Disable if user is logged in
+              disabled={isLoggedIn}
             />
             {isLoggedIn && <span className="email-note">Using your account email</span>}
           </div>
 
-          {/* Guest information fields when not logged in */}
           {!isLoggedIn && (
             <div className="guest-info-section">
               <h3>Guest Information</h3>
