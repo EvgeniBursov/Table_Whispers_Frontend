@@ -6,8 +6,6 @@ import MngEmptyState from './ManagementEmptyState';
 import TimeSelector from '../components/TimeSelector/TimeSelector';
 
 import { 
-  formatTime24h, 
-  formatDate, 
   calculateDuration,
   getCurrentDateInIsrael
 } from '../../timeUtils'; 
@@ -28,6 +26,30 @@ const ManagementReservationList = ({
   notifications = [],
   onClearNotifications = () => {}
 }) => {
+  const formatTime24hWithoutTimezone = (dateString) => {
+    const date = new Date(dateString);
+    const hours = date.getUTCHours().toString().padStart(2, '0');
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
+  const formatDateWithoutTimezone = (dateString) => {
+    const date = new Date(dateString);
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatTimeDisplayWithoutTimezone = (dateString) => {
+    const date = new Date(dateString);
+    const hours = date.getUTCHours();
+    const minutes = date.getUTCMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+  };
+
   const [filteredReservations, setFilteredReservations] = useState([]);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
@@ -35,16 +57,13 @@ const ManagementReservationList = ({
   const [hasNewNotification, setHasNewNotification] = useState(false);
   const [isLoadingUpdate, setIsLoadingUpdate] = useState(false);
   
-  // Time filter state
   const [startTimeFilter, setStartTimeFilter] = useState('');
   const [endTimeFilter, setEndTimeFilter] = useState('');
 
-  // Watch for new notifications and show indicator
   useEffect(() => {
     if (notifications.length > 0) {
       setHasNewNotification(true);
       
-      // Auto-hide indicator after 5 seconds
       const timer = setTimeout(() => {
         setHasNewNotification(false);
       }, 5000);
@@ -53,7 +72,6 @@ const ManagementReservationList = ({
     }
   }, [notifications.length]);
 
-  // Filter reservations based on date, time, and status
   useEffect(() => {
     if (!Array.isArray(reservations)) {
       setFilteredReservations([]);
@@ -62,37 +80,27 @@ const ManagementReservationList = ({
     
     let filtered = [...reservations];
     
-    // Only apply date filter if a date is selected
     if (dateFilter && dateFilter.trim() !== '') {
       console.log("Filtering by date:", dateFilter);
       filtered = filtered.filter(res => {
         if (!res.orderDetails?.startTime) return false;
-        const resDate = new Date(res.orderDetails.startTime);
-        const resDateInIsrael = resDate.toLocaleDateString('en-CA', {
-          timeZone: 'Asia/Jerusalem'
-        });
-        
-        return resDateInIsrael === dateFilter;
+        const resDateFormatted = formatDateWithoutTimezone(res.orderDetails.startTime);
+        return resDateFormatted === dateFilter;
       });
     }
     
-    // Apply time range filter - now using hours only from the custom TimeSelector
     if (startTimeFilter) {
       console.log("Filtering by start time:", startTimeFilter);
       filtered = filtered.filter(res => {
         if (!res.orderDetails?.startTime) return false;
 
         const resTime = new Date(res.orderDetails.startTime);
-        const resHourInIsrael = parseInt(resTime.toLocaleTimeString('en-US', {
-          timeZone: 'Asia/Jerusalem',
-          hour: '2-digit',
-          hour12: false
-        }));
+        const resHour = resTime.getUTCHours();
         
         const [startHour] = startTimeFilter.split(':');
         const startHourInt = parseInt(startHour, 10);
         
-        return resHourInIsrael >= startHourInt;
+        return resHour >= startHourInt;
       });
     }
     
@@ -102,35 +110,25 @@ const ManagementReservationList = ({
         if (!res.orderDetails?.startTime) return false;
 
         const resTime = new Date(res.orderDetails.startTime);
-        const resHourInIsrael = parseInt(resTime.toLocaleTimeString('en-US', {
-          timeZone: 'Asia/Jerusalem',
-          hour: '2-digit',
-          hour12: false
-        }));
+        const resHour = resTime.getUTCHours();
         
         const [endHour] = endTimeFilter.split(':');
         const endHourInt = parseInt(endHour, 10);
         
-        return resHourInIsrael <= endHourInt;
+        return resHour <= endHourInt;
       });
     }
     
-    // Apply status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(res => 
         res.orderDetails?.status.toLowerCase() === statusFilter.toLowerCase()
       );
     }
     
-    // Sort reservations by earliest time first (using Israel timezone)
     filtered.sort((a, b) => {
       const timeA = new Date(a.orderDetails.startTime);
       const timeB = new Date(b.orderDetails.startTime);
-      
-      const israelTimeA = new Date(timeA.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
-      const israelTimeB = new Date(timeB.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
-      
-      return israelTimeA.getTime() - israelTimeB.getTime();
+      return timeA.getTime() - timeB.getTime();
     });
     
     setFilteredReservations(filtered);
@@ -146,12 +144,10 @@ const ManagementReservationList = ({
     }
   };
 
-  // Function to update reservation status
   const updateReservationStatus = async (reservationId, newStatus) => {
     setIsLoadingUpdate(true);
     
     try {
-      // Get customer information from the selected reservation
       const reservation = reservations.find(res => res.id === reservationId);
       const customerEmail = reservation?.customer?.email;
       const customerName = reservation?.customer?.firstName 
@@ -179,7 +175,6 @@ const ManagementReservationList = ({
       if (!data.success) {
         alert(`Failed to update status: ${data.message}`);
       } else {
-        // Close modal
         setShowStatusModal(false);
         setSelectedReservation(null);
       }
@@ -191,7 +186,6 @@ const ManagementReservationList = ({
     }
   };
 
-  // Handler for Cancel button
   const handleCancelReservation = (e, reservation) => {
     e.stopPropagation();
     if (window.confirm('Are you sure you want to cancel this reservation?')) {
@@ -199,14 +193,12 @@ const ManagementReservationList = ({
     }
   };
 
-  // Handler for Edit button (to show status options)
   const handleEditStatus = (e, reservation) => {
     e.stopPropagation();
     setSelectedReservation(reservation);
     setShowStatusModal(true);
   };
 
-  // Function to clear all filters
   const clearAllFilters = () => {
     setDateFilter('');
     setStatusFilter('all');
@@ -214,9 +206,7 @@ const ManagementReservationList = ({
     setEndTimeFilter('');
   };
 
-  // Helper function to get table display info
   const getTableDisplay = (reservation) => {
-    // Check all possible places where table number might be stored
     const tableNumber = 
       (reservation.orderDetails && reservation.orderDetails.table) || 
       reservation.orderDetails.tableNumber || 
@@ -233,7 +223,6 @@ const ManagementReservationList = ({
     }
   };
 
-  // Status Modal Component
   const StatusModal = () => {
     if (!showStatusModal || !selectedReservation) return null;
     
@@ -284,11 +273,9 @@ const ManagementReservationList = ({
     );
   };
 
-  // Notifications Dropdown Component
   const NotificationsDropdown = () => {
     if (!showNotifications || notifications.length === 0) return null;
     
-    // Group notifications by type
     const groupedNotifications = {
       update: notifications.filter(n => n.type === 'update'),
       status: notifications.filter(n => n.type === 'status'),
@@ -309,7 +296,6 @@ const ManagementReservationList = ({
         </div>
         
         <div className="mng-notifications-content">
-          {/* Status changes */}
           {groupedNotifications.status.length > 0 && (
             <div className="mng-notification-group">
               <h4>Status Updates</h4>
@@ -317,16 +303,13 @@ const ManagementReservationList = ({
                 <div key={notification.id} className="mng-notification-item status">
                   <div className="mng-notification-message">{notification.message}</div>
                   <div className="mng-notification-time">
-                    {new Date(notification.timestamp).toLocaleTimeString('en-US', {
-                      timeZone: 'Asia/Jerusalem'
-                    })}
+                    {formatTimeDisplayWithoutTimezone(notification.timestamp)}
                   </div>
                 </div>
               ))}
             </div>
           )}
           
-          {/* New reservations */}
           {groupedNotifications.new.length > 0 && (
             <div className="mng-notification-group">
               <h4>New Reservations</h4>
@@ -334,16 +317,13 @@ const ManagementReservationList = ({
                 <div key={notification.id} className="mng-notification-item new">
                   <div className="mng-notification-message">{notification.message}</div>
                   <div className="mng-notification-time">
-                    {new Date(notification.timestamp).toLocaleTimeString('en-US', {
-                      timeZone: 'Asia/Jerusalem'
-                    })}
+                    {formatTimeDisplayWithoutTimezone(notification.timestamp)}
                   </div>
                 </div>
               ))}
             </div>
           )}
           
-          {/* Cancellations */}
           {groupedNotifications.cancellation.length > 0 && (
             <div className="mng-notification-group">
               <h4>Cancellations</h4>
@@ -351,16 +331,13 @@ const ManagementReservationList = ({
                 <div key={notification.id} className="mng-notification-item cancellation">
                   <div className="mng-notification-message">{notification.message}</div>
                   <div className="mng-notification-time">
-                    {new Date(notification.timestamp).toLocaleTimeString('en-US', {
-                      timeZone: 'Asia/Jerusalem'
-                    })}
+                    {formatTimeDisplayWithoutTimezone(notification.timestamp)}
                   </div>
                 </div>
               ))}
             </div>
           )}
           
-          {/* Detail changes */}
           {groupedNotifications.change.length > 0 && (
             <div className="mng-notification-group">
               <h4>Detail Changes</h4>
@@ -368,16 +345,13 @@ const ManagementReservationList = ({
                 <div key={notification.id} className="mng-notification-item change">
                   <div className="mng-notification-message">{notification.message}</div>
                   <div className="mng-notification-time">
-                    {new Date(notification.timestamp).toLocaleTimeString('en-US', {
-                      timeZone: 'Asia/Jerusalem'
-                    })}
+                    {formatTimeDisplayWithoutTimezone(notification.timestamp)}
                   </div>
                 </div>
               ))}
             </div>
           )}
           
-          {/* Table assignments */}
           {groupedNotifications.table.length > 0 && (
             <div className="mng-notification-group">
               <h4>Table Assignments</h4>
@@ -385,16 +359,13 @@ const ManagementReservationList = ({
                 <div key={notification.id} className="mng-notification-item table">
                   <div className="mng-notification-message">{notification.message}</div>
                   <div className="mng-notification-time">
-                    {new Date(notification.timestamp).toLocaleTimeString('en-US', {
-                      timeZone: 'Asia/Jerusalem'
-                    })}
+                    {formatTimeDisplayWithoutTimezone(notification.timestamp)}
                   </div>
                 </div>
               ))}
             </div>
           )}
           
-          {/* Other updates */}
           {groupedNotifications.update.length > 0 && (
             <div className="mng-notification-group">
               <h4>Other Updates</h4>
@@ -402,16 +373,13 @@ const ManagementReservationList = ({
                 <div key={notification.id} className="mng-notification-item update">
                   <div className="mng-notification-message">{notification.message}</div>
                   <div className="mng-notification-time">
-                    {new Date(notification.timestamp).toLocaleTimeString('en-US', {
-                      timeZone: 'Asia/Jerusalem'
-                    })}
+                    {formatTimeDisplayWithoutTimezone(notification.timestamp)}
                   </div>
                 </div>
               ))}
             </div>
           )}
           
-          {/* Errors */}
           {groupedNotifications.error.length > 0 && (
             <div className="mng-notification-group">
               <h4>Errors</h4>
@@ -419,9 +387,7 @@ const ManagementReservationList = ({
                 <div key={notification.id} className="mng-notification-item error">
                   <div className="mng-notification-message">{notification.message}</div>
                   <div className="mng-notification-time">
-                    {new Date(notification.timestamp).toLocaleTimeString('en-US', {
-                      timeZone: 'Asia/Jerusalem'
-                    })}
+                    {formatTimeDisplayWithoutTimezone(notification.timestamp)}
                   </div>
                 </div>
               ))}
@@ -432,7 +398,6 @@ const ManagementReservationList = ({
     );
   };
 
-  // If no reservations data available
   if (!Array.isArray(reservations) || reservations.length === 0) {
     return (
       <MngEmptyState 
@@ -451,7 +416,6 @@ const ManagementReservationList = ({
         <div className="mng-header-top">
           <h2>Reservations</h2>
           <div className="mng-header-actions">
-            {/* Socket connection status */}
             <div className={`mng-realtime-status ${socketConnected ? 'connected' : 'disconnected'}`}>
               <span className="mng-status-indicator"></span>
               {socketConnected ? 'Real-time Updates Active' : 'Offline Mode'}
@@ -477,7 +441,6 @@ const ManagementReservationList = ({
             )}
           </div>
           
-          {/* Time range filter using custom TimeSelector */}
           <div className="mng-filter-group">
             <label>From:</label>
             <TimeSelector 
@@ -510,7 +473,6 @@ const ManagementReservationList = ({
             </select>
           </div>
           
-          {/* Clear all filters button */}
           {(dateFilter || startTimeFilter || endTimeFilter || statusFilter !== 'all') && (
             <button 
               className="mng-clear-all-filters-btn"
@@ -548,8 +510,8 @@ const ManagementReservationList = ({
                   onClick={() => onSelectReservation(reservation)}
                   className={`mng-reservation-row ${reservation.orderDetails.status.toLowerCase() === 'cancelled' ? 'mng-reservation-cancelled' : ''}`}
                 >
-                  <td className="mng-time-column">{formatTime24h(reservation.orderDetails.startTime)}</td>
-                  <td>{formatDate(reservation.orderDetails.startTime)}</td>
+                  <td className="mng-time-column">{formatTime24hWithoutTimezone(reservation.orderDetails.startTime)}</td>
+                  <td>{formatDateWithoutTimezone(reservation.orderDetails.startTime)}</td>
                   <td>
                     {reservation.customer ? (
                       <div>
@@ -607,7 +569,6 @@ const ManagementReservationList = ({
         )}
       </div>
       
-      {/* Render the status modal */}
       <StatusModal />
     </div>
   );
