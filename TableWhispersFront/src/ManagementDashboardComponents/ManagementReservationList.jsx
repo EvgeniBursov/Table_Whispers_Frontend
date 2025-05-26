@@ -4,36 +4,15 @@ import './ManagementDashboardCSS/MngReservationList.css';
 import './ManagementDashboardCSS/MngStatusModal.css';
 import MngEmptyState from './ManagementEmptyState';
 import TimeSelector from '../components/TimeSelector/TimeSelector';
+
+import { 
+  formatTime24h, 
+  formatDate, 
+  calculateDuration,
+  getCurrentDateInIsrael
+} from '../../timeUtils'; 
+
 const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
-
-
-// Helper function to format time in 24-hour format
-const formatTime24h = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    hour12: false  
-  });
-};
-
-// Helper function to calculate duration
-const calculateDuration = (startTime, endTime) => {
-  const start = new Date(startTime);
-  const end = new Date(endTime);
-  const duration = Math.round((end - start) / (1000 * 60)); // duration in minutes
-  return `${duration} min`;
-};
-
-// Format date for display
-const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
-};
 
 const ManagementReservationList = ({ 
   reservations, 
@@ -89,7 +68,11 @@ const ManagementReservationList = ({
       filtered = filtered.filter(res => {
         if (!res.orderDetails?.startTime) return false;
         const resDate = new Date(res.orderDetails.startTime);
-        return resDate.toISOString().split('T')[0] === dateFilter;
+        const resDateInIsrael = resDate.toLocaleDateString('en-CA', {
+          timeZone: 'Asia/Jerusalem'
+        });
+        
+        return resDateInIsrael === dateFilter;
       });
     }
     
@@ -98,11 +81,18 @@ const ManagementReservationList = ({
       console.log("Filtering by start time:", startTimeFilter);
       filtered = filtered.filter(res => {
         if (!res.orderDetails?.startTime) return false;
+
         const resTime = new Date(res.orderDetails.startTime);
+        const resHourInIsrael = parseInt(resTime.toLocaleTimeString('en-US', {
+          timeZone: 'Asia/Jerusalem',
+          hour: '2-digit',
+          hour12: false
+        }));
+        
         const [startHour] = startTimeFilter.split(':');
         const startHourInt = parseInt(startHour, 10);
         
-        return resTime.getHours() >= startHourInt;
+        return resHourInIsrael >= startHourInt;
       });
     }
     
@@ -110,11 +100,18 @@ const ManagementReservationList = ({
       console.log("Filtering by end time:", endTimeFilter);
       filtered = filtered.filter(res => {
         if (!res.orderDetails?.startTime) return false;
+
         const resTime = new Date(res.orderDetails.startTime);
+        const resHourInIsrael = parseInt(resTime.toLocaleTimeString('en-US', {
+          timeZone: 'Asia/Jerusalem',
+          hour: '2-digit',
+          hour12: false
+        }));
+        
         const [endHour] = endTimeFilter.split(':');
         const endHourInt = parseInt(endHour, 10);
         
-        return resTime.getHours() <= endHourInt;
+        return resHourInIsrael <= endHourInt;
       });
     }
     
@@ -125,11 +122,15 @@ const ManagementReservationList = ({
       );
     }
     
-    // Sort reservations by earliest time first
+    // Sort reservations by earliest time first (using Israel timezone)
     filtered.sort((a, b) => {
-      const timeA = new Date(a.orderDetails.startTime).getTime();
-      const timeB = new Date(b.orderDetails.startTime).getTime();
-      return timeA - timeB; // Sort by earliest time first
+      const timeA = new Date(a.orderDetails.startTime);
+      const timeB = new Date(b.orderDetails.startTime);
+      
+      const israelTimeA = new Date(timeA.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
+      const israelTimeB = new Date(timeB.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
+      
+      return israelTimeA.getTime() - israelTimeB.getTime();
     });
     
     setFilteredReservations(filtered);
@@ -316,7 +317,9 @@ const ManagementReservationList = ({
                 <div key={notification.id} className="mng-notification-item status">
                   <div className="mng-notification-message">{notification.message}</div>
                   <div className="mng-notification-time">
-                    {new Date(notification.timestamp).toLocaleTimeString()}
+                    {new Date(notification.timestamp).toLocaleTimeString('en-US', {
+                      timeZone: 'Asia/Jerusalem'
+                    })}
                   </div>
                 </div>
               ))}
@@ -331,7 +334,9 @@ const ManagementReservationList = ({
                 <div key={notification.id} className="mng-notification-item new">
                   <div className="mng-notification-message">{notification.message}</div>
                   <div className="mng-notification-time">
-                    {new Date(notification.timestamp).toLocaleTimeString()}
+                    {new Date(notification.timestamp).toLocaleTimeString('en-US', {
+                      timeZone: 'Asia/Jerusalem'
+                    })}
                   </div>
                 </div>
               ))}
@@ -346,7 +351,9 @@ const ManagementReservationList = ({
                 <div key={notification.id} className="mng-notification-item cancellation">
                   <div className="mng-notification-message">{notification.message}</div>
                   <div className="mng-notification-time">
-                    {new Date(notification.timestamp).toLocaleTimeString()}
+                    {new Date(notification.timestamp).toLocaleTimeString('en-US', {
+                      timeZone: 'Asia/Jerusalem'
+                    })}
                   </div>
                 </div>
               ))}
@@ -361,7 +368,9 @@ const ManagementReservationList = ({
                 <div key={notification.id} className="mng-notification-item change">
                   <div className="mng-notification-message">{notification.message}</div>
                   <div className="mng-notification-time">
-                    {new Date(notification.timestamp).toLocaleTimeString()}
+                    {new Date(notification.timestamp).toLocaleTimeString('en-US', {
+                      timeZone: 'Asia/Jerusalem'
+                    })}
                   </div>
                 </div>
               ))}
@@ -376,7 +385,9 @@ const ManagementReservationList = ({
                 <div key={notification.id} className="mng-notification-item table">
                   <div className="mng-notification-message">{notification.message}</div>
                   <div className="mng-notification-time">
-                    {new Date(notification.timestamp).toLocaleTimeString()}
+                    {new Date(notification.timestamp).toLocaleTimeString('en-US', {
+                      timeZone: 'Asia/Jerusalem'
+                    })}
                   </div>
                 </div>
               ))}
@@ -391,7 +402,9 @@ const ManagementReservationList = ({
                 <div key={notification.id} className="mng-notification-item update">
                   <div className="mng-notification-message">{notification.message}</div>
                   <div className="mng-notification-time">
-                    {new Date(notification.timestamp).toLocaleTimeString()}
+                    {new Date(notification.timestamp).toLocaleTimeString('en-US', {
+                      timeZone: 'Asia/Jerusalem'
+                    })}
                   </div>
                 </div>
               ))}
@@ -406,7 +419,9 @@ const ManagementReservationList = ({
                 <div key={notification.id} className="mng-notification-item error">
                   <div className="mng-notification-message">{notification.message}</div>
                   <div className="mng-notification-time">
-                    {new Date(notification.timestamp).toLocaleTimeString()}
+                    {new Date(notification.timestamp).toLocaleTimeString('en-US', {
+                      timeZone: 'Asia/Jerusalem'
+                    })}
                   </div>
                 </div>
               ))}
@@ -450,6 +465,7 @@ const ManagementReservationList = ({
               type="date" 
               value={dateFilter} 
               onChange={(e) => setDateFilter(e.target.value)}
+              min={getCurrentDateInIsrael()} 
             />
             {dateFilter && (
               <button 

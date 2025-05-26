@@ -98,18 +98,19 @@ const ChatManagement = ({ restaurantId }) => {
       if (processedMessagesRef.current.has(message._id)) return;
       processedMessagesRef.current.add(message._id);
       
-      // Update messages if viewing this customer's chat
-      if (selectedCustomer && message.order_id === selectedCustomer.order_id) {
-        setMessages(prev => [...prev, message]);
-        
-        // Mark customer messages as read
-        if (message.sender_type === 'customer') {
+      // Only handle messages FROM customer TO restaurant (not our own messages)
+      if (message.sender_type === 'customer' && message.recipient_type === 'restaurant') {
+        // Update messages if viewing this customer's chat
+        if (selectedCustomer && message.order_id === selectedCustomer.order_id) {
+          setMessages(prev => [...prev, message]);
+          
+          // Mark customer messages as read
           socket.emit('markMessageRead', { messageId: message._id });
         }
+        
+        // Update sidebar
+        updateCustomersList(message);
       }
-      
-      // Update sidebar
-      updateCustomersList(message);
     };
     
     const handleMessageSent = (message) => {
@@ -118,11 +119,15 @@ const ChatManagement = ({ restaurantId }) => {
       if (processedMessagesRef.current.has(message._id)) return;
       processedMessagesRef.current.add(message._id);
       
-      if (selectedCustomer && message.order_id === selectedCustomer.order_id) {
-        setMessages(prev => [...prev, message]);
+      // Only handle OUR OWN sent messages (restaurant -> customer)
+      if (message.sender_type === 'restaurant' && 
+          message.restaurant_sender_id === restaurantId) {
+        if (selectedCustomer && message.order_id === selectedCustomer.order_id) {
+          setMessages(prev => [...prev, message]);
+        }
+        
+        updateCustomersList(message);
       }
-      
-      updateCustomersList(message);
     };
     
     const handleMessageRead = (data) => {
@@ -145,7 +150,7 @@ const ChatManagement = ({ restaurantId }) => {
       socket.off('messageSent', handleMessageSent);
       socket.off('messageRead', handleMessageRead);
     };
-  }, [socket, selectedCustomer, updateCustomersList]);
+  }, [socket, selectedCustomer, updateCustomersList, restaurantId]);
   
   // Load customer chats
   useEffect(() => {

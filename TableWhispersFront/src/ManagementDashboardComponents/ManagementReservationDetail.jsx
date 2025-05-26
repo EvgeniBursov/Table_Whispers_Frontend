@@ -2,29 +2,18 @@ import React, { useState } from 'react';
 import './ManagementDashboardCSS/MngReservationDetail.css';
 import CustomerReservationHistory from './ManagementCustomerReservationHistory';
 import BillModal from '../components/Bills/Bills'; 
+
+
+import { 
+  formatTime24h, 
+  formatDate, 
+  calculateDuration,
+  convertToIsraelTime,
+  getCurrentDateInIsrael,
+  createDateInIsrael
+} from '../../timeUtils'; 
+
 const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
-
-
-const formatTime24h = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    hour12: false  
-  });
-};
-
-const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-};
-
-const calculateDuration = (startTime, endTime) => {
-  const start = new Date(startTime);
-  const end = new Date(endTime);
-  const duration = Math.round((end - start) / (1000 * 60));
-  return `${duration} min`;
-};
 
 const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, loading }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -63,13 +52,11 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
 
   const handleEditClick = () => {
     if (orderDetails.startTime) {
-      const startDate = new Date(orderDetails.startTime);
-      const formattedDate = startDate.toISOString().split('T')[0];
-      const formattedTime = startDate.toTimeString().slice(0, 5);
+      const { date, time } = convertToIsraelTime(orderDetails.startTime);
       
       setEditFormData({
-        date: formattedDate,
-        time: formattedTime,
+        date: date,
+        time: time,
         guests: orderDetails.guests || 2,
         tableNumber: orderDetails.tableNumber || ''
       });
@@ -109,13 +96,14 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
     setFormError('');
     
     try {
-      const startTime = new Date(`${editFormData.date}T${editFormData.time}`);
+      const startTime = createDateInIsrael(editFormData.date, editFormData.time);
       
       const endTime = new Date(startTime);
       endTime.setHours(endTime.getHours() + 2);
       
       const startTimeISO = startTime.toISOString();
       const endTimeISO = endTime.toISOString();
+      
       const response = await fetch(`${API_URL}/update_Reservation_Details/restaurant`, {
         method: 'POST',
         headers: {
@@ -128,8 +116,8 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
           time: editFormData.time,
           guests: parseInt(editFormData.guests, 10),
           tableNumber: editFormData.tableNumber || null,
-          notify_all: true, // Add this flag to notify all connected clients
-          client_email: reservation.customer?.email || '', // Add client email for notifications
+          notify_all: true,
+          client_email: reservation.customer?.email || '',
           restaurant_id: reservation.restaurantId || reservation.restaurant_id || ''
         }),
       });
@@ -176,8 +164,8 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
           body: JSON.stringify({
             reservation_id: reservation.id,
             status: 'Cancelled',
-            notify_all: true, // Add this flag to notify all connected clients
-            client_email: reservation.customer?.email || '', // Add client email for notifications
+            notify_all: true,
+            client_email: reservation.customer?.email || '',
             restaurant_id: reservation.restaurantId || reservation.restaurant_id || ''
           }),
         });
@@ -205,7 +193,7 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
   const handleSelectHistoryReservation = (historyReservation) => {
     console.log('Selected reservation from history:', historyReservation);
   };
-  console.log(orderDetails)
+
   return (
     <div className="mng-reservation-detail-container">
       <div className="mng-detail-header">
@@ -330,7 +318,7 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
                   name="date"
                   value={editFormData.date}
                   onChange={handleInputChange}
-                  min={new Date().toISOString().split("T")[0]}
+                  min={getCurrentDateInIsrael()} 
                   required
                 />
               </div>
