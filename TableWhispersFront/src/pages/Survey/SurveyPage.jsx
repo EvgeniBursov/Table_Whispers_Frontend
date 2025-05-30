@@ -151,7 +151,7 @@ const SurveyPage = () => {
         <p>{error}</p>
         <button 
           className="back-button"
-          onClick={() => window.location.href = `${API_URL}/`}
+          onClick={() => navigate("/HomePage")}
         >
           Return to Homepage
         </button>
@@ -167,7 +167,7 @@ const SurveyPage = () => {
         <p>We appreciate your input and look forward to serving you again!</p>
         <button 
           className="back-button"
-          onClick={() => window.location.href = `${API_URL}/`}
+          onClick={() => navigate("/HomePage")}
         >
           Return to Homepage
         </button>

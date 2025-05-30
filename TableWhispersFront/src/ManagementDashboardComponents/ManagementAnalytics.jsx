@@ -840,7 +840,7 @@ const ManagementAnalytics = ({ restaurantId }) => {
                     <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                       <CartesianGrid />
                       <XAxis type="number" dataKey="averageGuests" name="Avg Guests" unit=" guests" />
-                      <YAxis type="number" dataKey="averageRevenue" name="Avg Revenue" unit="₪" />
+                      <YAxis type="number" dataKey="averageRevenue" name="Avg Revenue" unit="$" />
                       <Tooltip cursor={{ strokeDasharray: '3 3' }} formatter={(value, name) => {
                         if (name === "averageRevenue") return [formatCurrency(value), "Avg Revenue"];
                         if (name === "averageGuests") return [value.toFixed(1), "Avg Guests"];
@@ -953,7 +953,7 @@ const ManagementAnalytics = ({ restaurantId }) => {
                     <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                       <CartesianGrid />
                       <XAxis type="number" dataKey="visitCount" name="Visit Count" />
-                      <YAxis type="number" dataKey="averageSpend" name="Average Spend" unit="₪" />
+                      <YAxis type="number" dataKey="averageSpend" name="Average Spend" unit="$" />
                       <Tooltip cursor={{ strokeDasharray: '3 3' }} formatter={(value, name) => {
                         if (name === "averageSpend") return [formatCurrency(value), "Average Spend"];
                         return [value, name];
