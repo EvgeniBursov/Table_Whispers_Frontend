@@ -59,8 +59,7 @@ const LoginPopUp = ({ setShowLogin }) => {
   // Initialize Google Sign-In once script is loaded
   useEffect(() => {
     if (isGoogleScriptLoaded && window.google) {
-      const CLIENT_ID = import.meta.env.GOOGLE_AUTH;
-      
+      const CLIENT_ID = import.meta.env.VITE_GOOGLE_AUTH;
       window.google.accounts.id.initialize({
         client_id: CLIENT_ID,
         callback: handleGoogleResponse,
