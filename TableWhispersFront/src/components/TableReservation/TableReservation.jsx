@@ -65,6 +65,9 @@ const TableReservation = ({
       }
 
       fetchRestaurantData();
+      if (selectedDate && restaurantId) {
+        fetchRealAvailability();
+      }
     }, []);
 
     useEffect(() => {
@@ -89,6 +92,28 @@ const TableReservation = ({
         console.error('Error fetching restaurant data:', error);
         setBookingError('Could not load restaurant data');
         setLoadingTimes(false);
+      }
+    };
+
+  const fetchRealAvailability = async () => {
+  if (!selectedDate || !restaurantId) return;
+  
+      try {
+        const response = await fetch(
+          `${API_URL}/restaurant/${restaurantId}/availability?date=${selectedDate}&guests=${selectedPeople || 2}`
+        );
+        
+        if (!response.ok) {
+          console.error('Failed to fetch availability');
+          return;
+        }
+        
+        const data = await response.json();
+        if (data.success && data.availability) {
+          setTableAvailability(data.availability);
+        }
+      } catch (error) {
+        console.error('Error fetching availability:', error);
       }
     };
 
@@ -118,7 +143,7 @@ const TableReservation = ({
       return `${hours12}:${minutes.toString().padStart(2, '0')} ${meridiem}`;
     };
 
-    const updateTimesForSelectedDay = (date, restaurant) => {
+  const updateTimesForSelectedDay = async (date, restaurant) => {
       setLoadingTimes(true);
       
       try {
@@ -138,12 +163,7 @@ const TableReservation = ({
             
             const slots = generateTimeSlots(openTime24h, closeTime24h);
             
-            const availabilityMap = {};
-            slots.forEach(slot => {
-              const randomAvailability = Math.floor(Math.random() * 4) + 1;
-              availabilityMap[slot] = randomAvailability;
-            });
-            setTableAvailability(availabilityMap);
+            await fetchRealAvailability();
             
             setAvailableTimes(slots);
             
@@ -197,8 +217,8 @@ const TableReservation = ({
     };
 
     const getAvailabilityClass = (time) => {
-      const tablesAvailable = tableAvailability[time];
-      if (!tablesAvailable) return '';
+      const tablesAvailable = tableAvailability[time] || 0;
+      if (tablesAvailable === 0) return 'no-availability';
       if (tablesAvailable >= 3) return 'high-availability';
       if (tablesAvailable === 2) return 'medium-availability';
       return 'low-availability';
@@ -515,14 +535,24 @@ const TableReservation = ({
                 ) : availableTimes.length === 0 ? (
                   <option value="">No times available</option>
                 ) : (
-                  availableTimes.map((time) => (
-                    <option key={time} value={time} className={`time-option ${getAvailabilityClass(time)}`}>
-                      {time} 
-                      {tableAvailability[time] === 1 
-                        ? " (Last table!)" 
-                        : ` (${tableAvailability[time]} tables available)`}
-                    </option>
-                  ))
+                  availableTimes.map((time) => {
+                    const tablesCount = tableAvailability[time] || 0;
+                    return (
+                      <option 
+                        key={time} 
+                        value={time} 
+                        className={`time-option ${getAvailabilityClass(time)}`}
+                        disabled={tablesCount === 0}
+                      >
+                        {time} 
+                        {tablesCount === 0 
+                          ? " (No tables available)" 
+                          : tablesCount === 1 
+                          ? " (Last table!)" 
+                          : ` (${tablesCount} tables available)`}
+                      </option>
+                    );
+                  })
                 )}
               </select>
             </div>
@@ -540,7 +570,7 @@ const TableReservation = ({
                 type="button" 
                 className="choose-table-btn"
                 onClick={handleProceedToTableSelection}
-                disabled={!selectedTime || loadingTimes}
+                disabled={!selectedTime || loadingTimes || (tableAvailability[selectedTime] || 0) === 0}
               >
                 Choose Your Table
               </button>
@@ -620,7 +650,7 @@ const TableReservation = ({
           <button 
             type="submit" 
             className="find-table-btn" 
-            disabled={isLoading || loadingTimes || availableTimes.length === 0}
+            disabled={isLoading || loadingTimes || availableTimes.length === 0 || (selectedTime && (tableAvailability[selectedTime] || 0) === 0)}
           >
             {isLoading ? 'Processing...' : (selectedTable ? `BOOK TABLE ${selectedTable.table_number}` : 'BOOK A TABLE')}
           </button>

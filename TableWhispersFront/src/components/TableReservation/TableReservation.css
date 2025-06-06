@@ -288,6 +288,10 @@
   padding: 2px 6px;
   border-radius: 4px;
 }
+.no-availability {
+  color: #999;
+  text-decoration: line-through;
+}
 
 /* Enhanced mobile responsiveness */
 @media (max-width: 767px) {
