@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import AvailableTimeCards from '../../components/AvailableTimeCards/AvailableTimeCards';
 import ReservationModal from '../../components/TableReservation/ReservationModel';
 import './HomePage.css';
-const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
+const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
 const HomePage = () => {
   const navigate = useNavigate();
   const [selectedPeople, setSelectedPeople] = useState(2);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
-  const [selectedTime, setSelectedTime] = useState(findClosestTime()); // Initialize with closest time
+  const [selectedTime, setSelectedTime] = useState(findClosestTime());
   const [searchQuery, setSearchQuery] = useState('');
   const [restaurants, setRestaurants] = useState([]);
   const [filteredRestaurants, setFilteredRestaurants] = useState([]);
@@ -19,8 +19,7 @@ const HomePage = () => {
   const [searchMessage, setSearchMessage] = useState(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [selectedRestaurantTime, setSelectedRestaurantTime] = useState({});
-  const [availabilityData, setAvailabilityData] = useState({}); // Store availability data by restaurant ID
-  
+  const [realAvailabilityData, setRealAvailabilityData] = useState({}); 
 
   // Reservation modal state
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
@@ -31,26 +30,24 @@ const HomePage = () => {
     const now = new Date();
     const today = now.toISOString().split("T")[0];
     
-    // If the date is in the future, all times are valid
+    // If future date, all times are valid
     if (selectedDate > today) {
       return true;
     }
     
-    // If the date is in the past, no times are valid
+    // If past date, no times are valid
     if (selectedDate < today) {
       return false;
     }
     
-    // For today, we need to check the time
-    const [slotHour, slotMinute] = timeSlot.time.split(':').map(Number);
+    // For today, check if time is in the future with buffer
+    const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
     const slotTime = new Date();
     slotTime.setHours(slotHour, slotMinute, 0, 0);
     
-    // Calculate current time plus 30 minutes buffer
     const bufferTime = new Date(now);
     bufferTime.setMinutes(bufferTime.getMinutes() + 30);
     
-    // Return true if slot time is at least 30 minutes in the future
     return slotTime >= bufferTime;
   };
 
@@ -60,33 +57,30 @@ const HomePage = () => {
     const currentHour = now.getHours();
     const currentMinutes = now.getMinutes();
     
-    // Add 30 minutes buffer
     let bufferMinutes = currentMinutes + 30;
     let bufferHour = currentHour;
     
-    // Adjust hour if buffer minutes roll over to next hour
     if (bufferMinutes >= 60) {
       bufferHour += 1;
       bufferMinutes -= 60;
     }
     
-    // If buffer time is before restaurant opening hours (11:00), return 11:00
-    if (bufferHour < 11) {
+    // Round to nearest 30-minute slot
+    const roundedMinutes = bufferMinutes <= 30 ? 30 : 0;
+    const adjustedHour = roundedMinutes === 0 ? bufferHour + 1 : bufferHour;
+    
+    // Ensure within reasonable dining hours (11:00 - 23:00)
+    if (adjustedHour < 11) {
       return "11:00";
     }
     
-    // If buffer time is after closing (23:30), return the earliest time for tomorrow
-    if (bufferHour >= 23 && bufferMinutes > 30) {
-      return "11:00";
+    if (adjustedHour >= 23) {
+      return "11:00"; // Next day
     }
     
-    // Round buffer minutes up to nearest 30 minutes
-    const roundedMinutes = bufferMinutes <= 30 ? "30" : "00";
-    const adjustedHour = roundedMinutes === "00" ? bufferHour + 1 : bufferHour;
-    
-    // Return the formatted time with zero-padded hours if needed
     const formattedHour = adjustedHour.toString().padStart(2, '0');
-    return `${formattedHour}:${roundedMinutes}`;
+    const formattedMinute = roundedMinutes.toString().padStart(2, '0');
+    return `${formattedHour}:${formattedMinute}`;
   }
 
   // Generate time options for the time select dropdown (24-hour format)
@@ -96,90 +90,170 @@ const HomePage = () => {
     const today = now.toISOString().split("T")[0];
     const isToday = selectedDate === today;
     
-    // Calculate minimum valid time (now + 30 min)
-    let minHour = 0;
-    let minMinute = 0;
-    
-    if (isToday) {
-      // Add 30 minutes to current time
-      let bufferMinutes = now.getMinutes() + 30;
-      let bufferHour = now.getHours();
-      
-      if (bufferMinutes >= 60) {
-        bufferHour += 1;
-        bufferMinutes -= 60;
-      }
-      
-      // Round up to nearest 30-minute interval
-      if (bufferMinutes > 0 && bufferMinutes < 30) {
-        minMinute = 30;
-        minHour = bufferHour;
-      } else if (bufferMinutes >= 30) {
-        minMinute = 0;
-        minHour = bufferHour + 1;
-      }
-    }
-    
-    // Generate time options for the full day
-    for (let hour = 0; hour < 24; hour++) {
+    // Generate 30-minute slots from 11:00 to 23:00
+    for (let hour = 11; hour <= 23; hour++) {
       for (let minute of [0, 30]) {
-        // Skip times before the minimum valid time on today
-        if (isToday && (hour < minHour || (hour === minHour && minute < minMinute))) {
+        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        
+        // For today, only show future times with buffer
+        if (isToday && !isValidTimeSlot(timeString)) {
           continue;
         }
         
-        // Format hours and minutes with leading zeros
-        const formattedHour = hour.toString().padStart(2, '0');
-        const formattedMinute = minute === 0 ? '00' : '30';
-        options.push(`${formattedHour}:${formattedMinute}`);
+        options.push(timeString);
       }
     }
     
     return options;
   };
 
-  // Format displayed time (optional: convert to 12-hour format for display)
-  const formatDisplayTime = (time) => {
-    // You can customize this if you want to display time differently
-    return time;
+  // Convert 24-hour format to 12-hour format for display and API compatibility
+  const convertTo12Hour = (timeString) => {
+    const [hours24, minutes] = timeString.split(':').map(Number);
+    const hours12 = hours24 % 12 || 12;
+    const meridiem = hours24 >= 12 ? 'PM' : 'AM';
+    return `${hours12}:${minutes.toString().padStart(2, '0')} ${meridiem}`;
   };
 
-  // Convert 24-hour format to 12-hour format for API
-  const convertTo12HourFormat = (time) => {
-    const [hours24, minutes] = time.split(':').map(Number);
-    const period = hours24 >= 12 ? 'PM' : 'AM';
-    const hours12 = hours24 % 12 || 12; // Convert 0 to 12 for 12 AM
-    return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
-  };
-
-  // Convert 12-hour format to 24-hour format for display
-  const convertTo24HourFormat = (time12h) => {
-    if (!time12h) return '';
-    
-    // Check if the time is already in 24-hour format
-    if (!time12h.toLowerCase().includes('am') && !time12h.toLowerCase().includes('pm')) {
-      return time12h; // Already in 24-hour format
+  // Convert 12-hour format to 24-hour format for internal use
+  const convertTo24Hour = (timeString) => {
+    if (!timeString.includes('AM') && !timeString.includes('PM')) {
+      return timeString; // Already in 24-hour format
     }
     
-    const [timePart, period] = time12h.split(' ');
+    const [timePart, meridiem] = timeString.split(' ');
     let [hours, minutes] = timePart.split(':').map(Number);
     
-    // Convert to 24-hour
-    if (period.toUpperCase() === 'PM' && hours < 12) {
+    if (meridiem === 'PM' && hours < 12) {
       hours += 12;
-    } else if (period.toUpperCase() === 'AM' && hours === 12) {
+    } else if (meridiem === 'AM' && hours === 12) {
       hours = 0;
     }
     
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
+  // Fetch real availability for all restaurants using the existing API
+  const fetchRealAvailabilityForAllRestaurants = async (restaurantsList) => {
+    if (!restaurantsList || restaurantsList.length === 0) {
+      setLoadingAvailability(false);
+      return;
+    }
+
+    setLoadingAvailability(true);
+    const newRealAvailabilityData = {};
+    
+    try {
+      console.log(`Fetching real availability for ${restaurantsList.length} restaurants`);
+      
+      // Create promises for fetching availability for each restaurant
+      const availabilityPromises = restaurantsList.map(async (restaurant) => {
+        try {
+          console.log(`Fetching availability for ${restaurant.res_name} - Date: ${selectedDate}, Guests: ${selectedPeople}`);
+          
+          // Use the existing API endpoint
+          const response = await fetch(
+            `${API_URL}/restaurant/${restaurant._id}/availability?date=${selectedDate}&guests=${selectedPeople}`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            }
+          );
+          
+          if (!response.ok) {
+            console.error(`Failed to fetch availability for ${restaurant._id}. Status: ${response.status}`);
+            newRealAvailabilityData[restaurant._id] = [];
+            return;
+          }
+          
+          const data = await response.json();
+          console.log(`Availability data for ${restaurant.res_name}:`, data);
+          
+          if (data.success && data.availability) {
+            // Convert the availability object to array format
+            // data.availability is like: { "14:00": 3, "14:30": 2, "15:00": 0, "15:30": 1 }
+            const processedTimes = Object.entries(data.availability)
+              .filter(([timeSlot, availableCount]) => availableCount > 0)
+              .map(([timeSlot, availableCount]) => ({
+                time: convertTo24Hour(timeSlot), // Convert to 24h format for internal use
+                availableTables: availableCount
+              }))
+              .filter(slot => {
+                // Only include valid times (future times with 30-min buffer for today)
+                return isValidTimeSlot(slot.time);
+              })
+              .sort((a, b) => {
+                // Sort times chronologically
+                const timeA = a.time.split(':').map(Number);
+                const timeB = b.time.split(':').map(Number);
+                
+                if (timeA[0] !== timeB[0]) {
+                  return timeA[0] - timeB[0]; // Sort by hour
+                }
+                return timeA[1] - timeB[1]; // Then by minute
+              });
+            
+            newRealAvailabilityData[restaurant._id] = processedTimes;
+            console.log(`Processed ${processedTimes.length} available times for ${restaurant.res_name}`);
+          } else {
+            console.log(`No available times found for ${restaurant.res_name}`);
+            newRealAvailabilityData[restaurant._id] = [];
+          }
+        } catch (error) {
+          console.error(`Error fetching availability for restaurant ${restaurant._id}:`, error);
+          newRealAvailabilityData[restaurant._id] = [];
+        }
+      });
+      
+      // Wait for all promises to resolve
+      await Promise.all(availabilityPromises);
+      
+      // Update state with real availability data
+      setRealAvailabilityData(newRealAvailabilityData);
+      console.log("All real availability data loaded successfully");
+      
+    } catch (error) {
+      console.error('Error fetching real availability:', error);
+    } finally {
+      setLoadingAvailability(false);
+    }
+  };
+
+  // Get the 2 closest time slots to the selected time
+  const getTwoClosestRealTimes = (availableTimes, baseTime) => {
+    if (!availableTimes || availableTimes.length === 0) return [];
+    
+    const [baseHour, baseMinute] = baseTime.split(':').map(Number);
+    const baseTimeInMinutes = baseHour * 60 + baseMinute;
+    
+    const timesWithDifference = availableTimes.map(slot => {
+      const [slotHour, slotMinute] = slot.time.split(':').map(Number);
+      const slotTimeInMinutes = slotHour * 60 + slotMinute;
+      
+      const diffInMinutes = Math.abs(slotTimeInMinutes - baseTimeInMinutes);
+      
+      return {
+        ...slot,
+        diffInMinutes
+      };
+    });
+    
+    const sortedByProximity = [...timesWithDifference].sort((a, b) => {
+      return a.diffInMinutes - b.diffInMinutes;
+    });
+    
+    return sortedByProximity.slice(0, 2).map(slot => ({
+      time: slot.time,
+      availableTables: slot.availableTables
+    }));
+  };
+
   // Update time selector when date changes
   useEffect(() => {
-    // If we have a selected time, regenerate the dropdown with new constraints
     const options = generateTimeOptions();
     
-    // If the currently selected time is no longer valid, pick the first available time
     if (options.length > 0 && !options.includes(selectedTime)) {
       setSelectedTime(options[0]);
     }
@@ -193,169 +267,40 @@ const HomePage = () => {
   // Fetch recommended restaurants
   const fetchRecommendedRestaurants = async () => {
     try {
+      setLoadingAvailability(true);
       const response = await fetch(`${API_URL}/all_Restaurants_Data`); 
       const data = await response.json();
-      ////console.log("🔹 Data from server:", data);
 
+      let restaurantsList = [];
       if (Array.isArray(data)) {
-        setRestaurants(data);
-        setFilteredRestaurants(data);
-        
-        // Fetch availability for all restaurants
-        fetchAvailabilityForAllRestaurants(data);
+        restaurantsList = data;
       } else if (data.data && Array.isArray(data.data)) {
-        setRestaurants(data.data);
-        setFilteredRestaurants(data.data);
-        
-        // Fetch availability for all restaurants
-        fetchAvailabilityForAllRestaurants(data.data);
+        restaurantsList = data.data;
       } else {
         console.error("❌ Unexpected data format:", data);
         setSearchMessage("Could not load recommended restaurants");
+        setLoadingAvailability(false);
+        return;
       }
+      
+      setRestaurants(restaurantsList);
+      setFilteredRestaurants(restaurantsList);
+      
+      // Fetch availability for all restaurants
+      await fetchRealAvailabilityForAllRestaurants(restaurantsList);
+      
     } catch (error) {
       console.error('❌ Error fetching data:', error);
       setSearchMessage("Error loading restaurants. Please try again.");
-    }
-  };
-
-  // Fetch availability for all restaurants
-  const fetchAvailabilityForAllRestaurants = async (restaurantsList) => {
-    setLoadingAvailability(true);
-    
-    // Create a new object to store availability data
-    const newAvailabilityData = {};
-    
-    try {
-      // Create an array of promises for fetching availability
-      const availabilityPromises = restaurantsList.map(async (restaurant) => {
-        try {
-          // Use the correct endpoint based on router configuration
-          const response = await fetch(
-            `${API_URL}/get_Available_Times/reservation/restaurant/${restaurant._id}?date=${selectedDate}&partySize=${selectedPeople}`
-          );
-          
-          if (!response.ok) {
-            console.error(`API error (${response.status}): ${response.statusText}`);
-            throw new Error(`Failed to fetch availability for restaurant ${restaurant._id}`);
-          }
-          
-          const data = await response.json();
-          //console.log(`Availability data for ${restaurant.res_name}:`, data);
-          
-          if (data.success && data.availableTimes) {
-            // Process the available times
-            const processedTimes = processAvailableTimes(data.availableTimes);
-            //console.log("Processed times:", processedTimes);
-            
-            // Filter to only include valid times (future times with 30-min buffer)
-            const validTimes = processedTimes.filter(slot => isValidTimeSlot(slot));
-            //console.log("Valid times:", validTimes);
-            
-            // Store in our object
-            newAvailabilityData[restaurant._id] = validTimes;
-          } else {
-            //console.log(`No available times found for ${restaurant.res_name}`);
-            newAvailabilityData[restaurant._id] = [];
-          }
-        } catch (error) {
-          console.error(`Error fetching availability for restaurant ${restaurant._id}:`, error);
-          newAvailabilityData[restaurant._id] = [];
-        }
-      });
-      
-      // Wait for all promises to resolve
-      await Promise.all(availabilityPromises);
-      
-      // Update state with the new availability data
-      setAvailabilityData(newAvailabilityData);
-      //console.log("All availability data:", newAvailabilityData);
-    } catch (error) {
-      console.error('Error fetching availability for restaurants:', error);
-    } finally {
       setLoadingAvailability(false);
     }
   };
 
-  // Process available times data from the API
-  const processAvailableTimes = (availableTimes) => {
-    //console.log("Processing available times:", availableTimes);
-    
-    if (!availableTimes || !Array.isArray(availableTimes)) {
-      console.warn("Available times is not an array:", availableTimes);
-      return [];
-    }
-    
-    return availableTimes.map(slot => {
-      // Check if the slot is already in the correct format
-      if (typeof slot === 'object' && slot.time) {
-        return {
-          time: convertTo24HourFormat(slot.time),
-          availableTables: slot.availableTables || 1
-        };
-      } else if (typeof slot === 'string') {
-        // If it's just a string time, convert it and assume 1 table
-        return {
-          time: convertTo24HourFormat(slot),
-          availableTables: 1
-        };
-      }
-      
-      // Default case - shouldn't happen with proper API response
-      return {
-        time: convertTo24HourFormat(slot.toString()),
-        availableTables: 1
-      };
-    }).sort((a, b) => {
-      // Sort times chronologically
-      const timeA = a.time.split(':').map(Number);
-      const timeB = b.time.split(':').map(Number);
-      
-      if (timeA[0] !== timeB[0]) {
-        return timeA[0] - timeB[0]; // Sort by hour
-      }
-      return timeA[1] - timeB[1]; // Then by minute
-    });
-  };
-
-  // Get only the 2 closest time slots to the selected time
-  const getTwoClosestTimes = (availableTimes, baseTime) => {
-    if (!availableTimes || availableTimes.length === 0) return [];
-    
-    // Parse the base time
-    const [baseHour, baseMinute] = baseTime.split(':').map(Number);
-    const baseTimeInMinutes = baseHour * 60 + baseMinute;
-    
-    // Calculate the time difference for each slot
-    const timesWithDifference = availableTimes.map(slot => {
-      const [slotHour, slotMinute] = slot.time.split(':').map(Number);
-      const slotTimeInMinutes = slotHour * 60 + slotMinute;
-      
-      // Calculate absolute difference in minutes
-      const diffInMinutes = Math.abs(slotTimeInMinutes - baseTimeInMinutes);
-      
-      return {
-        ...slot,
-        diffInMinutes
-      };
-    });
-    
-    // Sort by proximity to base time (closest first)
-    const sortedByProximity = [...timesWithDifference].sort((a, b) => {
-      return a.diffInMinutes - b.diffInMinutes;
-    });
-    
-    // Take just the 2 closest times and remove the diff property
-    return sortedByProximity.slice(0, 2).map(slot => ({
-      time: slot.time,
-      availableTables: slot.availableTables
-    }));
-  };
-
-  // Re-fetch availability when date or party size changes
+  // Re-fetch real availability when date or party size changes
   useEffect(() => {
     if (restaurants.length > 0) {
-      fetchAvailabilityForAllRestaurants(restaurants);
+      console.log(`Refreshing availability due to change - Date: ${selectedDate}, People: ${selectedPeople}`);
+      fetchRealAvailabilityForAllRestaurants(restaurants);
     }
   }, [selectedDate, selectedPeople]);
 
@@ -381,32 +326,41 @@ const HomePage = () => {
     setSearchMessage(null);
     
     try {
-
-      // Fallback - fetch all restaurants and filter by availability
       const response = await fetch(`${API_URL}/all_Restaurants_Data`);
       const data = await response.json();
       
+      let restaurantsList = [];
       if (Array.isArray(data)) {
-        setRestaurants(data);
-        
-        // Fetch availability for all restaurants
-        await fetchAvailabilityForAllRestaurants(data);
-        
-        // Filter restaurants that have available times
-        const restaurantsWithAvailability = data.filter(restaurant => {
-          const availableTimes = availabilityData[restaurant._id] || [];
-          return availableTimes.length > 0;
-        });
-        
-        setFilteredRestaurants(restaurantsWithAvailability);
-        
-        if (restaurantsWithAvailability.length === 0) {
-          setSearchMessage(`No restaurants available for ${selectedPeople} people at ${selectedTime} on ${selectedDate}`);
-        }
+        restaurantsList = data;
+      } else if (data.data && Array.isArray(data.data)) {
+        restaurantsList = data.data;
       } else {
         console.error("❌ Unexpected data format:", data);
         setSearchMessage("Could not find restaurants for your search criteria");
+        setIsSearching(false);
+        return;
       }
+      
+      setRestaurants(restaurantsList);
+      
+      // Fetch real availability
+      await fetchRealAvailabilityForAllRestaurants(restaurantsList);
+      
+      // Wait a moment for availability data to be processed
+      setTimeout(() => {
+        // Filter restaurants that have real available times
+        const restaurantsWithRealAvailability = restaurantsList.filter(restaurant => {
+          const realAvailableTimes = realAvailabilityData[restaurant._id] || [];
+          return realAvailableTimes.length > 0;
+        });
+        
+        setFilteredRestaurants(restaurantsWithRealAvailability);
+        
+        if (restaurantsWithRealAvailability.length === 0) {
+          setSearchMessage(`No restaurants available for ${selectedPeople} ${selectedPeople === 1 ? 'person' : 'people'} on ${selectedDate}`);
+        }
+      }, 1000);
+      
     } catch (error) {
       console.error('❌ Error searching for restaurants:', error);
       setSearchMessage("Error searching for restaurants. Please try again.");
@@ -417,28 +371,21 @@ const HomePage = () => {
 
   // Handle restaurant card click
   const handleRestaurantClick = (e, restaurantId) => {
-    // If a modal is open, don't navigate
     if (isReservationModalOpen) return;
-    
-    // Navigate to restaurant page
     navigate(`/restaurant/${restaurantId}`);
   };
 
-  // Handle time slot selection - now opens the reservation modal
+  // Handle time slot selection
   const handleTimeSelect = (restaurantId, time) => {
-    // Store selected time
     setSelectedRestaurantTime({
       ...selectedRestaurantTime,
       [restaurantId]: time
     });
     
-    // Set the selected restaurant
     setSelectedRestaurant(restaurantId);
     
-    // Find the restaurant data
     const restaurant = restaurants.find(r => r._id === restaurantId);
     if (restaurant) {
-      // Set reservation restaurant data and open the modal
       setReservationRestaurant(restaurant);
       setIsReservationModalOpen(true);
     }
@@ -458,7 +405,9 @@ const HomePage = () => {
         <div className="search-container">
           <select 
             value={selectedPeople}
-            onChange={(e) => setSelectedPeople(Number(e.target.value))}
+            onChange={(e) => {
+              setSelectedPeople(Number(e.target.value));
+            }}
             className="party-size-select"
             aria-label="Number of people"
           >
@@ -476,7 +425,9 @@ const HomePage = () => {
             type="date"
             value={selectedDate}
             min={today} 
-            onChange={(e) => setSelectedDate(e.target.value)}
+            onChange={(e) => {
+              setSelectedDate(e.target.value);
+            }}
             className="date-input"
             aria-label="Reservation date"
           />
@@ -489,7 +440,7 @@ const HomePage = () => {
           >
             {generateTimeOptions().map((timeOption) => (
               <option key={timeOption} value={timeOption}>
-                {formatDisplayTime(timeOption)}
+                {timeOption}
               </option>
             ))}
           </select>
@@ -497,7 +448,7 @@ const HomePage = () => {
           <button 
             onClick={handleSearch}
             className="find-button"
-            disabled={isSearching}
+            disabled={isSearching || loadingAvailability}
           >
             {isSearching ? 'Searching...' : 'FIND ME A TABLE'}
           </button>
@@ -522,7 +473,7 @@ const HomePage = () => {
         
         {loadingAvailability && (
           <div className="availability-loading">
-            <p>Loading availability information...</p>
+            <p>Checking availability for {selectedPeople} {selectedPeople === 1 ? 'person' : 'people'} on {selectedDate}...</p>
           </div>
         )}
         
@@ -532,16 +483,21 @@ const HomePage = () => {
           </div>
         )}
         
-        {filteredRestaurants.length === 0 && !searchMessage && !loadingAvailability ? (
-          <p className="no-results">🔎 No restaurants found.</p>
+        {!loadingAvailability && filteredRestaurants.length === 0 && !searchMessage ? (
+          <p className="no-results">🔎 No restaurants found with available tables.</p>
         ) : (
           <div className="restaurants-grid">
             {filteredRestaurants.map((restaurant) => {
-              // Get available times for this restaurant
-              const allAvailableTimes = availabilityData[restaurant._id] || [];
+              // Get real available times for this restaurant
+              const realAvailableTimes = realAvailabilityData[restaurant._id] || [];
               
               // Get only the 2 closest times to the selected time
-              const twoClosestTimes = getTwoClosestTimes(allAvailableTimes, selectedTime);
+              const twoClosestRealTimes = getTwoClosestRealTimes(realAvailableTimes, selectedTime);
+              
+              // Only show restaurants with available times
+              if (realAvailableTimes.length === 0 && !loadingAvailability) {
+                return null;
+              }
               
               return (
                 <div 
@@ -556,40 +512,39 @@ const HomePage = () => {
                   />
                   <div className="restaurant-info">
                     <h3>{restaurant.res_name}</h3>
-                  <div className="rating">
-                    {[...Array(5)].map((_, index) => {
-                      const ratingValue = restaurant.rating || 0;
-                      
-                      if (index < Math.floor(ratingValue)) {
-                        return <span key={index} className="star-filled">★</span>;
-                      } else if (index < Math.floor(ratingValue + 0.5)) {
-                        return <span key={index} className="star-half">★</span>;
-                      } else {
-                        return <span key={index} className="star-empty">★</span>;
-                      }
-                    })}
-                    <span className="rating-number">({restaurant.number_of_rating || 0} reviews)</span>
-                  </div>
+                    <div className="rating">
+                      {[...Array(5)].map((_, index) => {
+                        const ratingValue = restaurant.rating || 0;
+                        
+                        if (index < Math.floor(ratingValue)) {
+                          return <span key={index} className="star-filled">★</span>;
+                        } else if (index < Math.floor(ratingValue + 0.5)) {
+                          return <span key={index} className="star-half">★</span>;
+                        } else {
+                          return <span key={index} className="star-empty">★</span>;
+                        }
+                      })}
+                      <span className="rating-number">({restaurant.number_of_rating || 0} reviews)</span>
+                    </div>
                     <p className="location">{restaurant.city || 'Unknown location'}</p>
                     <p className="description">{restaurant.description || ''}</p>
                     
                     <div className="available-times">
-                      <h4>Closest Available Times</h4>
+                      <h4>Available Times</h4>
                       
                       {loadingAvailability ? (
-                        <p className="loading-times">Loading available times...</p>
-                      ) : twoClosestTimes && twoClosestTimes.length > 0 ? (
+                        <p className="loading-times">Checking availability...</p>
+                      ) : twoClosestRealTimes && twoClosestRealTimes.length > 0 ? (
                         <AvailableTimeCards
-                          availableTimes={twoClosestTimes}
+                          availableTimes={twoClosestRealTimes}
                           selectedTime={selectedRestaurantTime[restaurant._id]}
                           onSelectTime={(time) => {
-                            // This will open the modal instead of navigating
                             handleTimeSelect(restaurant._id, time);
                           }}
-                          type="table" // Default to table, could be enhanced if API provides seating type
+                          type="table"
                         />
                       ) : (
-                        <p className="no-times">No available times</p>
+                        <p className="no-times">No tables available for {selectedPeople} {selectedPeople === 1 ? 'person' : 'people'}</p>
                       )}
                     </div>
                   </div>

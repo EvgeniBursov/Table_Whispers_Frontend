@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './RestaurantReviews.css';
 const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
-const RestaurantReviews = ({ reviews: initialReviews, restaurantId, isLoggedIn, currentUser }) => {
+const RestaurantReviews = ({ reviews: initialReviews, restaurantId, isLoggedIn, currentUser, onAddReview }) => {
   const [reviews, setReviews] = useState(initialReviews || []);
   const [sortOrder, setSortOrder] = useState('newest');
   const [newReview, setNewReview] = useState({ 
@@ -39,21 +39,32 @@ const RestaurantReviews = ({ reviews: initialReviews, restaurantId, isLoggedIn, 
           restaurant_Id: restaurantId,
           rating: newReview.rating,
           review: newReview.comment,
-          user_email: localStorage.getItem('userEmail'), //userEmail
+          user_email: localStorage.getItem('userEmail'),
         }),
       });
 
       if (!response.ok) throw new Error('Failed to submit review');
 
       const submittedReview = await response.json();
-      setReviews([...reviews, submittedReview]);
-      setNewReview({ rating: 5, comment: '' });
-      setAlertMessage('Review submitted successfully!');
-      setShowAlert(true);
+      console.log('Server response:', submittedReview);
       
-      setTimeout(() => {
-        setShowAlert(false);
-      }, 3000);
+      if (submittedReview.success && submittedReview.review) {
+        setReviews([...reviews, submittedReview.review]);
+        
+        if (onAddReview) {
+          onAddReview(submittedReview.review);
+        }
+        
+        setNewReview({ rating: 5, comment: '' });
+        setAlertMessage('Review submitted successfully!');
+        setShowAlert(true);
+        
+        setTimeout(() => {
+          setShowAlert(false);
+        }, 3000);
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (error) {
       setAlertMessage('Error submitting review. Please try again.');
       setShowAlert(true);
@@ -142,7 +153,7 @@ const RestaurantReviews = ({ reviews: initialReviews, restaurantId, isLoggedIn, 
                   {new Date(review.created_at).toLocaleDateString()}
                 </span>
               </div>
-              <p className="review-comment">{review.comment}</p>
+              <p className="review-comment">{review.comment || review.review}</p>
             </div>
           ))
         ) : (

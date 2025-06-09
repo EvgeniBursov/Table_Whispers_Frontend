@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import io from 'socket.io-client';
 import './ManagementTables.css';
+import BillModal from '../components/Bills/Bills';
 const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 import ManagementNewReservationForm from '../ManagementDashboardComponents/ManagementNewReservationForm'
 
@@ -45,7 +46,8 @@ const ManagementTables = ({ restaurantId }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showReservationForm, setShowReservationForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  
+  const [selectedBill, setSelectedBill] = useState(null);
+
   const [timeFilter, setTimeFilter] = useState({
     enabled: false,
     startTime: '00:00',
@@ -83,6 +85,14 @@ const ManagementTables = ({ restaurantId }) => {
   
   const floorPlanRef = useRef(null);
   const socketRef = useRef(null);
+
+  const handleViewBill = (reservationId) => {
+    setSelectedBill(reservationId);
+  };
+
+  const handleCloseBill = () => {
+    setSelectedBill(null);
+  };
   
   const isWithinTimeFilter = (reservation) => {
     if (!timeFilter.enabled) return true;
@@ -1247,6 +1257,20 @@ const ManagementTables = ({ restaurantId }) => {
                         <div className="mgt-detail-label">Guests:</div>
                         <div className="mgt-detail-value">{reservation.guests}</div>
                       </div>
+
+                      {(['seated', 'done'].includes(reservation.status?.toLowerCase())) && (
+                        <div className="mgt-detail-row">
+                          <div className="mgt-detail-label">Bill:</div>
+                          <div className="mgt-detail-value">
+                            <button 
+                              className="mgt-btn mgt-btn-bill"
+                              onClick={() => handleViewBill(reservation.id)}
+                            >
+                              <span className="bill-icon">🧾</span> View Bill
+                            </button>
+                          </div>
+                        </div>
+                      )}
                       
                       {index < (statusFilter 
                           ? selectedTable.reservations.filter(res => 
@@ -1324,6 +1348,13 @@ const ManagementTables = ({ restaurantId }) => {
             </div>
           </div>
         </div>
+      )}
+      {selectedBill && (
+        <BillModal 
+          orderId={selectedBill} 
+          onClose={handleCloseBill} 
+          token={localStorage.getItem('token')}
+        />
       )}
     </div>
   );

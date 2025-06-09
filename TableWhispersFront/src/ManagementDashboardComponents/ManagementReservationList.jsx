@@ -26,6 +26,14 @@ const ManagementReservationList = ({
   notifications = [],
   onClearNotifications = () => {}
 }) => {
+// CHECK
+  const getCurrentTime = () => {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   const formatTime24hWithoutTimezone = (dateString) => {
     const date = new Date(dateString);
     const hours = date.getUTCHours().toString().padStart(2, '0');
@@ -57,7 +65,7 @@ const ManagementReservationList = ({
   const [hasNewNotification, setHasNewNotification] = useState(false);
   const [isLoadingUpdate, setIsLoadingUpdate] = useState(false);
   
-  const [startTimeFilter, setStartTimeFilter] = useState('');
+  const [startTimeFilter, setStartTimeFilter] = useState(getCurrentTime());
   const [endTimeFilter, setEndTimeFilter] = useState('');
 
   useEffect(() => {
@@ -96,11 +104,16 @@ const ManagementReservationList = ({
 
         const resTime = new Date(res.orderDetails.startTime);
         const resHour = resTime.getUTCHours();
+        const resMinute = resTime.getUTCMinutes();
         
-        const [startHour] = startTimeFilter.split(':');
+        const [startHour, startMinute] = startTimeFilter.split(':');
         const startHourInt = parseInt(startHour, 10);
+        const startMinuteInt = parseInt(startMinute, 10);
         
-        return resHour >= startHourInt;
+        const resTimeInMinutes = resHour * 60 + resMinute;
+        const startTimeInMinutes = startHourInt * 60 + startMinuteInt;
+        
+        return resTimeInMinutes >= startTimeInMinutes;
       });
     }
     
@@ -111,11 +124,16 @@ const ManagementReservationList = ({
 
         const resTime = new Date(res.orderDetails.startTime);
         const resHour = resTime.getUTCHours();
+        const resMinute = resTime.getUTCMinutes();
         
-        const [endHour] = endTimeFilter.split(':');
+        const [endHour, endMinute] = endTimeFilter.split(':');
         const endHourInt = parseInt(endHour, 10);
+        const endMinuteInt = parseInt(endMinute, 10);
         
-        return resHour <= endHourInt;
+        const resTimeInMinutes = resHour * 60 + resMinute;
+        const endTimeInMinutes = endHourInt * 60 + endMinuteInt;
+        
+        return resTimeInMinutes <= endTimeInMinutes;
       });
     }
     
