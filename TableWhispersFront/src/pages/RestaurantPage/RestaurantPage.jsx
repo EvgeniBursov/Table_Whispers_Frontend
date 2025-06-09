@@ -6,7 +6,6 @@ import { useParams } from 'react-router-dom';
 import './RestaurantPage.css';
 const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
-
 const RestaurantPage = () => {
     const { id } = useParams();
     const [restaurant, setRestaurant] = useState(null);
@@ -31,7 +30,7 @@ const RestaurantPage = () => {
             email: userEmail
           });
         }
-      }, []);
+    }, []);
     
     useEffect(() => {
       const fetchRestaurantData = async () => {
@@ -48,12 +47,19 @@ const RestaurantPage = () => {
       fetchRestaurantData();
     }, [id]);
 
+    const handleAddReview = (newReview) => {
+        setRestaurant(prevRestaurant => ({
+            ...prevRestaurant,
+            reviews: [...(prevRestaurant.reviews || []), newReview],
+            number_of_rating: (prevRestaurant.number_of_rating || 0) + 1
+        }));
+    };
+
     if (!restaurant) return <div>Loading...</div>;
 
     return (
         <div className="restaurant-page">
             <div className="restaurant-header">
-                {/* */}
                 <img 
                     src={`${API_URL}/${restaurant.mainImage}`} 
                     alt={restaurant.res_name} 
@@ -90,23 +96,19 @@ const RestaurantPage = () => {
                     restaurantName={restaurant.res_name}
                 />
 
-            {/* Navigation Tabs */}
             <div className="restaurant-nav">
                 <button className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}>Overview</button>
                 <button className={activeTab === 'menu' ? 'active' : ''} onClick={() => setActiveTab('menu')}>Menu</button>
                 <button className={activeTab === 'gallery' ? 'active' : ''} onClick={() => setActiveTab('gallery')}>Gallery</button>
                 <button className={activeTab === 'reviews' ? 'active' : ''} onClick={() => setActiveTab('reviews')}>Reviews</button>
-
             </div>
 
-            {/* תוכן הטאבים */}
             {activeTab === 'overview' && (
                 <div className="overview-section">
                     <h2>About Us</h2>
                     <p className="description">{restaurant.description}</p>
                     <p className="full-description">{restaurant.full_description}</p>
                     
-                    {/* Opening Hours */}
                 <div className="opening-hours">
                     <h3>Opening Hours</h3>
                     {restaurant.open_time ? (
@@ -131,12 +133,10 @@ const RestaurantPage = () => {
             {restaurant?.menu && restaurant.menu.length > 0 ? (
                 <div>
                     {['Appetizers', 'Main Course', 'Side Dishes', 'Desserts', 'Drinks'].map((category) => {
-                        // Filter items for the current category across all menus
                         const categoryItems = restaurant.menu[0].menus.flatMap(menu => 
                             menu.items.filter(item => item.category === category)
                         );
 
-                        // Only render the category if it has items
                         return categoryItems.length > 0 ? (
                             <div key={category} className="menu-category">
                                 <h3>{category}</h3>
@@ -165,14 +165,15 @@ const RestaurantPage = () => {
             )}
         </div>
     )}
+
       {activeTab === 'reviews' && (
     <RestaurantReviews 
         reviews={restaurant.reviews}
         restaurantId={id}
         isLoggedIn={isLoggedIn}
         currentUser={currentUser}
+        onAddReview={handleAddReview}
     />
-
     )}
 
             {activeTab === 'gallery' && (

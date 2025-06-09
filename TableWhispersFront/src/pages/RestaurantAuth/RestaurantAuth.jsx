@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './RestaurantAuth.css';
+
 const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
 const RestaurantAuth = () => {
   const navigate = useNavigate();
   const [currState, setCurrState] = useState("Sign Up");
-  const [formPart, setFormPart] = useState(1); // מעקב אחר חלק הטופס הנוכחי
+  const [formPart, setFormPart] = useState(1); 
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -27,6 +28,20 @@ const RestaurantAuth = () => {
   const [tempUserData, setTempUserData] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Reset password states
+  const [resetState, setResetState] = useState('email');
+  const [resetEmail, setResetEmail] = useState('');
+  const [verifiedEmail, setVerifiedEmail] = useState('');
+  const [resetVerificationCode, setResetVerificationCode] = useState('');
+  const [verifiedCode, setVerifiedCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  
+  // Username recovery states
+  const [usernameRecoveryEmail, setUsernameRecoveryEmail] = useState('');
+  const [usernameRecoveryCode, setUsernameRecoveryCode] = useState('');
+  const [usernameRecoveryState, setUsernameRecoveryState] = useState('email'); // 'email', 'code', 'complete'
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -36,11 +51,10 @@ const RestaurantAuth = () => {
   };
 
   const handleClose = () => {
-    navigate('/'); // ניווט חזרה לדף הבית
+    navigate('/'); 
   };
 
   const handleNextPart = () => {
-    // בדיקת תקינות לחלק הראשון לפני המעבר לחלק השני
     if (!formData.first_name || !formData.last_name || !formData.age || !formData.city || !formData.restaurant_name) {
       alert('Please fill all fields');
       return;
@@ -156,6 +170,218 @@ const RestaurantAuth = () => {
       alert('Failed to verify code.');
       setLoading(false);
     }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      let url, payload;
+      
+      switch(resetState) {
+        case 'email':
+          if (!resetEmail) {
+            alert('Please enter your email');
+            setLoading(false);
+            return;
+          }
+          url = `${API_URL}/sendTotpCode`;
+          payload = { email: resetEmail, user_type: 'Restaurant' };
+          break;
+
+        case 'code':
+          if (!verifiedEmail) {
+            alert('Please complete email verification first');
+            setResetState('email');
+            setLoading(false);
+            return;
+          }
+          url = `${API_URL}/verifyTotpCode`;
+          payload = { 
+            email: verifiedEmail,
+            user_type: 'Restaurant',
+            totp_code: resetVerificationCode 
+          };
+          break;
+
+        case 'newPassword':
+          if (!verifiedEmail || !verifiedCode) {
+            alert('Please complete the verification process');
+            setResetState('email');
+            setLoading(false);
+            return;
+          }
+          if (newPassword !== confirmNewPassword) {
+            alert('Passwords do not match');
+            setLoading(false);
+            return;
+          }
+          url = `${API_URL}/changeResPassword`;
+          payload = { 
+            email: verifiedEmail,
+            password: newPassword,
+            confirm_password: confirmNewPassword
+          };
+          break;
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) throw new Error(data.error);
+
+      // Handle successful response based on current state
+      switch(resetState) {
+        case 'email':
+          setVerifiedEmail(resetEmail);  // Save verified email
+          setResetState('code');
+          alert('Verification code sent to your email');
+          break;
+
+        case 'code':
+          setVerifiedCode(resetVerificationCode);  // Save verified code
+          setResetState('newPassword');
+          alert('Code verified successfully');
+          break;
+
+        case 'newPassword':
+          alert('Password reset successfully!');
+          // Reset all states
+          resetAllPasswordStates();
+          setCurrState('Login');
+          break;
+      }
+    } catch (error) {
+      // Handle specific errors
+      if (error.message.includes('not found')) {
+        alert('Email not found');
+        setResetState('email');
+      } else if (error.message.includes('invalid code')) {
+        alert('Invalid verification code');
+        setResetVerificationCode('');
+      } else {
+        alert(error.message || 'An error occurred');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUsernameRecovery = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      let url, payload;
+
+      switch(usernameRecoveryState) {
+        case 'email':
+          if (!usernameRecoveryEmail) {
+            alert('Please enter your email');
+            setLoading(false);
+            return;
+          }
+          url = `${API_URL}/sendTotpCode`;
+          payload = { email: usernameRecoveryEmail, user_type: 'Restaurant' };
+          break;
+
+        case 'code':
+          if (!usernameRecoveryCode) {
+            alert('Please enter the verification code');
+            setLoading(false);
+            return;
+          }
+          url = `${API_URL}/verifyTotpCode`;
+          payload = { 
+            email: usernameRecoveryEmail,
+            user_type: 'Restaurant',
+            totp_code: usernameRecoveryCode 
+          };
+          break;
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) throw new Error(data.error);
+
+      switch(usernameRecoveryState) {
+        case 'email':
+          setUsernameRecoveryState('code');
+          alert('Verification code sent to your email');
+          break;
+
+        case 'code':
+          // After successful verification, send the username
+          await sendUsername();
+          break;
+      }
+    } catch (error) {
+      if (error.message.includes('not found')) {
+        alert('Email not found');
+        setUsernameRecoveryState('email');
+      } else if (error.message.includes('invalid code')) {
+        alert('Invalid verification code');
+        setUsernameRecoveryCode('');
+      } else {
+        alert(error.message || 'An error occurred');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendUsername = async () => {
+    try {
+      const response = await fetch(`${API_URL}/sendUserName`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: usernameRecoveryEmail })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) throw new Error(data.error);
+
+      setUsernameRecoveryState('complete');
+      alert('Username has been sent to your email!');
+      
+      // Reset states after a delay
+      setTimeout(() => {
+        resetAllUsernameStates();
+        setCurrState('Login');
+      }, 3000);
+      
+    } catch (error) {
+      alert(error.message || 'Failed to send username');
+    }
+  };
+
+  const resetAllPasswordStates = () => {
+    setVerifiedEmail('');
+    setVerifiedCode('');
+    setResetEmail('');
+    setResetVerificationCode('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setResetState('email');
+  };
+
+  const resetAllUsernameStates = () => {
+    setUsernameRecoveryEmail('');
+    setUsernameRecoveryCode('');
+    setUsernameRecoveryState('email');
   };
 
   const renderFormPart1 = () => {
@@ -284,6 +510,104 @@ const RestaurantAuth = () => {
       );
     }
 
+    if (currState === "Forgot Password") {
+      switch(resetState) {
+        case 'email':
+          return (
+            <>
+              <input
+                type="email"
+                placeholder="Your Email Address"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+              />
+              <button onClick={handleResetPassword} disabled={loading} className="modern-button">
+                {loading ? 'Sending...' : 'Send Reset Code'}
+              </button>
+            </>
+          );
+        case 'code':
+          return (
+            <>
+              <p className="verified-email">Email: {verifiedEmail}</p>
+              <input
+                type="text"
+                placeholder="Enter verification code"
+                value={resetVerificationCode}
+                onChange={(e) => setResetVerificationCode(e.target.value)}
+              />
+              <button onClick={handleResetPassword} disabled={loading} className="modern-button">
+                {loading ? 'Verifying...' : 'Verify Code'}
+              </button>
+            </>
+          );
+        case 'newPassword':
+          return (
+            <>
+              <p className="verified-email">Email: {verifiedEmail}</p>
+              <input
+                type="password"
+                placeholder="New Password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <input
+                type="password"
+                placeholder="Confirm New Password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+              />
+              <button onClick={handleResetPassword} disabled={loading} className="modern-button">
+                {loading ? 'Resetting...' : 'Reset Password'}
+              </button>
+            </>
+          );
+      }
+    }
+
+    if (currState === "Username Recovery") {
+      switch(usernameRecoveryState) {
+        case 'email':
+          return (
+            <>
+              <p>Enter your email to recover your username</p>
+              <input
+                type="email"
+                placeholder="Your Email Address"
+                value={usernameRecoveryEmail}
+                onChange={(e) => setUsernameRecoveryEmail(e.target.value)}
+              />
+              <button onClick={handleUsernameRecovery} disabled={loading} className="modern-button">
+                {loading ? 'Sending...' : 'Send Verification Code'}
+              </button>
+            </>
+          );
+        case 'code':
+          return (
+            <>
+              <p className="verified-email">Email: {usernameRecoveryEmail}</p>
+              <p>Enter the verification code sent to your email</p>
+              <input
+                type="text"
+                placeholder="Enter verification code"
+                value={usernameRecoveryCode}
+                onChange={(e) => setUsernameRecoveryCode(e.target.value)}
+              />
+              <button onClick={handleUsernameRecovery} disabled={loading} className="modern-button">
+                {loading ? 'Verifying...' : 'Verify & Send Username'}
+              </button>
+            </>
+          );
+        case 'complete':
+          return (
+            <>
+              <p className="success-message">✅ Username sent to your email!</p>
+              <p>Check your email for your username.</p>
+            </>
+          );
+      }
+    }
+
     if (currState === "Sign Up") {
       return (
         <form onSubmit={handleSubmit}>
@@ -345,12 +669,45 @@ const RestaurantAuth = () => {
 
         {!showTOTP && (
           <div className="login-popup-footer">
-            <p>
-              {currState === "Login" ? "Don't have an account? " : "Already have an account? "}
-              <span onClick={() => {setCurrState(currState === "Login" ? "Sign Up" : "Login"); setFormPart(1);}}>
-                {currState === "Login" ? "Sign Up" : "Login"}
-              </span>
-            </p>
+            {currState === "Login" ? (
+              <>
+                <p onClick={() => {
+                  setCurrState("Forgot Password");
+                  resetAllPasswordStates();
+                }}>Forgot Password?</p>
+                <p onClick={() => {
+                  setCurrState("Username Recovery");
+                  resetAllUsernameStates();
+                }}>Forgot Username?</p>
+                <p>
+                  Don't have an account?{' '}
+                  <span onClick={() => {setCurrState("Sign Up"); setFormPart(1);}}>
+                    Sign Up
+                  </span>
+                </p>
+              </>
+            ) : currState === "Sign Up" ? (
+              <p>
+                Already have an account?{' '}
+                <span onClick={() => {setCurrState("Login"); setFormPart(1);}}>
+                  Login
+                </span>
+              </p>
+            ) : currState === "Forgot Password" ? (
+              <p>
+                <span onClick={() => {
+                  setCurrState("Login");
+                  resetAllPasswordStates();
+                }}>Back to Login</span>
+              </p>
+            ) : currState === "Username Recovery" ? (
+              <p>
+                <span onClick={() => {
+                  setCurrState("Login");
+                  resetAllUsernameStates();
+                }}>Back to Login</span>
+              </p>
+            ) : null}
           </div>
         )}
       </div>

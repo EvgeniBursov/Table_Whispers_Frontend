@@ -583,6 +583,7 @@ const TableReservation = ({
                 availableTables={availableTables}
                 onTableSelect={handleTableSelection}
                 selectedTableId={selectedTable ? (selectedTable.id || selectedTable._id) : null}
+                guestCount={selectedPeople}
               />
               
               {selectedTable && !isManagementReservation &&(
