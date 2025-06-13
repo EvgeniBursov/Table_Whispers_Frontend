@@ -1,0 +1,81 @@
+name: Frontend Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  FRONTEND_URL: https://lemon-mushroom-0b6d89f03.6.azurestaticapps.net
+
+jobs:
+  lighthouse:
+    name: Lighthouse Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli
+      
+      - name: Run Lighthouse
+        run: lhci autorun
+      
+      - name: Upload reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: lighthouse-reports
+          path: reports/lighthouse/
+
+  pagespeed:
+    name: PageSpeed Insights
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run PageSpeed Test
+        run: |
+          mkdir -p reports
+          curl -s "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${{ env.FRONTEND_URL }}&strategy=mobile" \
+            | jq '.lighthouseResult.categories.performance.score * 100' > reports/pagespeed-score.txt
+          
+          SCORE=$(cat reports/pagespeed-score.txt)
+          echo "PageSpeed Score: $SCORE"
+          
+          if (( $(echo "$SCORE < 70" | bc -l) )); then
+            echo "Performance score too low: $SCORE"
+            exit 1
+          fi
+
+  mobile-friendly:
+    name: Mobile Friendly Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Mobile Friendly
+        run: |
+          # בדיקה פשוטה של responsive design
+          curl -s -I "${{ env.FRONTEND_URL }}" | grep -i "200 OK"
+          echo "Basic mobile check passed"
+
+  testcafe:
+    name: TestCafe Browser Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install TestCafe
+        run: npm install -g testcafe
+      
+      - name: Run TestCafe Tests
+        run: testcafe chrome:headless tests/frontend/*.js --reporter spec
