@@ -9,6 +9,9 @@ on:
     branches:
       - main
 
+env:
+  FRONTEND_URL: https://lemon-mushroom-0b6d89f03.6.azurestaticapps.net
+
 jobs:
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
@@ -46,6 +49,146 @@ jobs:
           VITE_BACKEND_API: ${{ secrets.BACKEND_API_URL }}
           VITE_GOOGLE_AUTH: ${{ secrets.GOOGLE_AUTH }}
           ###### End of Repository/Build Configurations ######
+
+  frontend_tests:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Frontend Tests
+    needs: build_and_deploy_job
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Wait for deployment
+        run: |
+          echo "Waiting for site to be available..."
+          for i in {1..10}; do
+            if curl -f -s "${{ env.FRONTEND_URL }}" > /dev/null; then
+              echo "Site is available!"
+              break
+            fi
+            echo "Attempt $i: Site not ready, waiting 30 seconds..."
+            sleep 30
+          done
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli
+
+      - name: Run Lighthouse Tests
+        run: |
+          mkdir -p reports
+          lhci autorun --upload.target=filesystem --upload.outputDir=./reports/lighthouse \
+            --collect.url="${{ env.FRONTEND_URL }}" \
+            --assert.assertions.categories:performance='["warn",{"minScore":0.7}]' \
+            --assert.assertions.categories:accessibility='["error",{"minScore":0.8}]' \
+            --assert.assertions.categories:seo='["warn",{"minScore":0.7}]'
+
+      - name: PageSpeed Insights Test
+        run: |
+          # Desktop test
+          DESKTOP_SCORE=$(curl -s "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${{ env.FRONTEND_URL }}&strategy=desktop&category=performance" | jq -r '.lighthouseResult.categories.performance.score // 0')
+          
+          # Mobile test  
+          MOBILE_SCORE=$(curl -s "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${{ env.FRONTEND_URL }}&strategy=mobile&category=performance" | jq -r '.lighthouseResult.categories.performance.score // 0')
+          
+          echo "Desktop Performance Score: $(echo "$DESKTOP_SCORE * 100" | bc)"
+          echo "Mobile Performance Score: $(echo "$MOBILE_SCORE * 100" | bc)"
+          
+          # Save results
+          echo "{\"desktop_score\": $DESKTOP_SCORE, \"mobile_score\": $MOBILE_SCORE}" > reports/pagespeed-results.json
+
+
+      - name: Mobile-Friendly Check
+        run: |
+          # Basic mobile-friendly check
+          RESPONSE=$(curl -s -w "%{http_code}" "${{ env.FRONTEND_URL }}")
+          HTTP_CODE="${RESPONSE: -3}"
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Site is accessible (HTTP $HTTP_CODE)"
+          else
+            echo "❌ Site returned HTTP $HTTP_CODE"
+            exit 1
+          fi
+          
+          # Check for viewport meta tag
+          VIEWPORT_CHECK=$(curl -s "${{ env.FRONTEND_URL }}" | grep -i "viewport" || echo "not found")
+          echo "Viewport meta tag: $VIEWPORT_CHECK"
+
+      - name: Generate Test Summary
+        if: always()
+        run: |
+          echo "# Frontend Test Results 📊" > test-summary.md
+          echo "" >> test-summary.md
+          echo "**Site:** ${{ env.FRONTEND_URL }}" >> test-summary.md
+          echo "**Date:** $(date)" >> test-summary.md
+          echo "" >> test-summary.md
+          
+          # Lighthouse results
+          if [ -f "reports/lighthouse/lhr.json" ]; then
+            PERF_SCORE=$(cat reports/lighthouse/lhr.json | jq -r '.categories.performance.score * 100 // "N/A"')
+            ACCESS_SCORE=$(cat reports/lighthouse/lhr.json | jq -r '.categories.accessibility.score * 100 // "N/A"')
+            SEO_SCORE=$(cat reports/lighthouse/lhr.json | jq -r '.categories.seo.score * 100 // "N/A"')
+            
+            echo "## Lighthouse Scores" >> test-summary.md
+            echo "- 🚀 Performance: ${PERF_SCORE}" >> test-summary.md
+            echo "- ♿ Accessibility: ${ACCESS_SCORE}" >> test-summary.md
+            echo "- 🔍 SEO: ${SEO_SCORE}" >> test-summary.md
+            echo "" >> test-summary.md
+          fi
+          
+          # PageSpeed results
+          if [ -f "reports/pagespeed-results.json" ]; then
+            DESKTOP=$(cat reports/pagespeed-results.json | jq -r '.desktop_score * 100 // "N/A"')
+            MOBILE=$(cat reports/pagespeed-results.json | jq -r '.mobile_score * 100 // "N/A"')
+            
+            echo "## PageSpeed Insights" >> test-summary.md
+            echo "- 🖥️ Desktop: ${DESKTOP}" >> test-summary.md
+            echo "- 📱 Mobile: ${MOBILE}" >> test-summary.md
+            echo "" >> test-summary.md
+          fi
+          
+          # TestCafe results
+          if [ -f "reports/testcafe-results.json" ]; then
+            PASSED=$(cat reports/testcafe-results.json | jq -r '.passed // 0')
+            FAILED=$(cat reports/testcafe-results.json | jq -r '.failed // 0')
+            
+            echo "## Browser Tests" >> test-summary.md
+            echo "- ✅ Passed: ${PASSED}" >> test-summary.md
+            echo "- ❌ Failed: ${FAILED}" >> test-summary.md
+          fi
+          
+          cat test-summary.md
+
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: frontend-test-reports
+          path: |
+            reports/
+            test-summary.md
+            tests/
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('test-summary.md')) {
+              const summary = fs.readFileSync('test-summary.md', 'utf8');
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: summary
+              });
+            }
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
