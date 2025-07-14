@@ -53,7 +53,17 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: '${{ env.APP_LOCATION }}/package-lock.json'
+
+      - name: 📂 Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.APP_LOCATION }}/node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('${{ env.APP_LOCATION }}/package-lock.json', '${{ env.APP_LOCATION }}/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-
+            ${{ runner.os }}-node-
 
       - name: 📦 Install dependencies
         working-directory: ${{ env.APP_LOCATION }}
