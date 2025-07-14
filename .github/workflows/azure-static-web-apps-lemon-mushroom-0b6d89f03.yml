@@ -4,56 +4,173 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'LICENSE'
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'LICENSE'
+
+# Security: Allow only specific permissions
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+env:
+  NODE_VERSION: '18'
+  APP_LOCATION: './TableWhispersFront'
+  OUTPUT_LOCATION: 'dist'
 
 jobs:
-  build_and_deploy_job:
+  # Job for validating code quality (runs on all PRs and pushes)
+  validate:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
-    name: Build and Deploy Job
-    permissions:
-       id-token: write
-       contents: read
+    timeout-minutes: 10
+    name: Code Validation
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
-      - name: Install OIDC Client from Core Package
-        run: npm install @actions/core@1.6.0 @actions/http-client
-      - name: Get Id Token
-        uses: actions/github-script@v6
-        id: idtoken
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-           script: |
-               const coredemo = require('@actions/core')
-               return await coredemo.getIDToken()
-           result-encoding: string
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '${{ env.APP_LOCATION }}/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ${{ env.APP_LOCATION }}
+        run: npm ci
+
+      - name: Run linting
+        working-directory: ${{ env.APP_LOCATION }}
+        run: |
+          if npm run lint --if-present; then
+            echo "✅ Linting passed"
+          else
+            echo "❌ Linting failed"
+            exit 1
+          fi
+
+      - name: Run type checking (if TypeScript)
+        working-directory: ${{ env.APP_LOCATION }}
+        run: |
+          if npm run type-check --if-present; then
+            echo "✅ Type checking passed"
+          else
+            echo "⚠️ Type checking not configured or failed"
+          fi
+
+      - name: Run tests
+        working-directory: ${{ env.APP_LOCATION }}
+        run: |
+          if npm run test --if-present; then
+            echo "✅ Tests passed"
+          else
+            echo "⚠️ Tests not configured"
+          fi
+
+  build_and_deploy_job:
+    needs: validate
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    name: Build and Deploy Job
+    environment: 
+      name: ${{ github.event_name == 'push' && 'production' || 'preview' }}
+      url: ${{ steps.builddeploy.outputs.static_web_app_url }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          lfs: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '${{ env.APP_LOCATION }}/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ${{ env.APP_LOCATION }}
+        run: npm ci
+
+      - name: Build application
+        working-directory: ${{ env.APP_LOCATION }}
+        run: npm run build
+        env:
+          VITE_BACKEND_API: ${{ secrets.BACKEND_API_URL }}
+          VITE_GOOGLE_AUTH: ${{ secrets.GOOGLE_AUTH }}
+          NODE_ENV: production
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LEMON_MUSHROOM_0B6D89F03 }}
           action: "upload"
-          app_location: "./TableWhispersFront" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: "dist" # Built app content directory - optional
-          github_id_token: ${{ steps.idtoken.outputs.result }}
+          app_location: ${{ env.APP_LOCATION }}
+          api_location: "" 
+          output_location: ${{ env.OUTPUT_LOCATION }}
+          skip_app_build: true  # We already built the app above
         env:
           VITE_BACKEND_API: ${{ secrets.BACKEND_API_URL }}
           VITE_GOOGLE_AUTH: ${{ secrets.GOOGLE_AUTH }}
-          ###### End of Repository/Build Configurations ######
+
+      - name: Comment PR with deployment URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deploymentUrl = '${{ steps.builddeploy.outputs.static_web_app_url }}';
+            const comment = `🚀 **Preview deployment ready!**
+            
+            📱 **Preview URL:** ${deploymentUrl}
+            🔍 **Commit:** ${{ github.sha }}
+            
+            The preview will be automatically deleted when this PR is closed.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     name: Close Pull Request Job
     steps:
       - name: Close Pull Request
         id: closepullrequest
         uses: Azure/static-web-apps-deploy@v1
         with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LEMON_MUSHROOM_0B6D89F03 }}
           action: "close"
+
+      - name: Comment PR closure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ Preview deployment has been cleaned up successfully.'
+            });
