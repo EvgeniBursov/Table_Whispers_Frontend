@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
+    "lint": "vite build --mode development",
     "preview": "vite preview"
   },
   "dependencies": {

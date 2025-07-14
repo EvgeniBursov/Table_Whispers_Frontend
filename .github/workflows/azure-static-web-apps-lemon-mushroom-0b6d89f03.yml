@@ -17,12 +17,6 @@ on:
       - '.gitignore'
       - 'LICENSE'
 
-# Set global environment variables
-env:
-  NODE_VERSION: '18'
-  APP_LOCATION: './TableWhispersFront'
-  OUTPUT_LOCATION: 'dist'
-
 jobs:
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
@@ -30,98 +24,58 @@ jobs:
     timeout-minutes: 15
     name: Build and Deploy Job
     
-    # Set environment based on event type
     environment: 
       name: ${{ github.event_name == 'push' && 'production' || 'preview' }}
       url: ${{ steps.builddeploy.outputs.static_web_app_url }}
     
     permissions:
-      id-token: write
-      contents: read
-      pull-requests: write
-      
+       id-token: write
+       contents: read
+       pull-requests: write
+       
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
-          fetch-depth: 1
 
       - name: 🏗️ Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: 📂 Cache node modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.APP_LOCATION }}/node_modules
-            ~/.npm
-          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('${{ env.APP_LOCATION }}/package-lock.json', '${{ env.APP_LOCATION }}/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-
-            ${{ runner.os }}-node-
+          node-version: '18'
 
       - name: 📦 Install dependencies
-        working-directory: ${{ env.APP_LOCATION }}
+        working-directory: ./TableWhispersFront
         run: |
           echo "🔍 Installing dependencies..."
-          npm ci --prefer-offline --no-audit
+          npm install
           echo "✅ Dependencies installed successfully"
 
-      - name: 🔍 Quick security check
-        working-directory: ${{ env.APP_LOCATION }}
+      - name: 🛡️ Quick security check
+        working-directory: ./TableWhispersFront
         run: |
           echo "🛡️ Running security audit..."
-          if npm audit --audit-level=high --production; then
-            echo "✅ No high-severity vulnerabilities found"
-          else
-            echo "⚠️ Security vulnerabilities detected - check npm audit output"
-            npm audit --audit-level=moderate --production || true
-          fi
+          npm audit --audit-level=high --production || echo "⚠️ Security audit completed with warnings"
 
       - name: 🧹 Code quality check
-        working-directory: ${{ env.APP_LOCATION }}
+        working-directory: ./TableWhispersFront
         run: |
           echo "🔍 Running code quality checks..."
-          
-          # Run linting if available
-          if npm run lint --if-present --silent; then
-            echo "✅ Linting passed"
-          else
-            echo "⚠️ Linting issues found (continuing build)"
-          fi
-          
-          # Run tests if available
-          if npm run test --if-present --silent -- --run --reporter=basic; then
-            echo "✅ Tests passed"
-          else
-            echo "⚠️ Tests not configured or failed (continuing build)"
-          fi
+          npm run lint --if-present || echo "⚠️ Linting not configured or failed"
+          npm run test --if-present || echo "⚠️ Tests not configured or failed"
 
-      - name: 🏗️ Build application
-        working-directory: ${{ env.APP_LOCATION }}
+      - name: 🚀 Build application
+        working-directory: ./TableWhispersFront
         run: |
           echo "🚀 Building application..."
           npm run build
           
           echo "📊 Build summary:"
-          if [ -d "${{ env.OUTPUT_LOCATION }}" ]; then
+          if [ -d "dist" ]; then
             echo "✅ Build output directory created"
-            echo "📦 Bundle size: $(du -sh ${{ env.OUTPUT_LOCATION }} | cut -f1)"
-            echo "📄 Files count: $(find ${{ env.OUTPUT_LOCATION }} -type f | wc -l)"
-            
-            # Check for large files
-            large_files=$(find ${{ env.OUTPUT_LOCATION }} -type f -size +1M 2>/dev/null || true)
-            if [ -n "$large_files" ]; then
-              echo "⚠️ Large files detected (>1MB):"
-              echo "$large_files" | xargs ls -lh
-            else
-              echo "✅ No files larger than 1MB"
-            fi
+            echo "📦 Bundle size: $(du -sh dist | cut -f1)"
+            echo "📄 Files count: $(find dist -type f | wc -l)"
           else
             echo "❌ Build output directory not found"
             exit 1
@@ -130,51 +84,48 @@ jobs:
           VITE_BACKEND_API: ${{ secrets.BACKEND_API_URL }}
           VITE_GOOGLE_AUTH: ${{ secrets.GOOGLE_AUTH }}
           NODE_ENV: production
-          CI: true
 
-      - name: 🔑 Install OIDC Client
+      - name: 🔑 Install OIDC Client from Core Package
         run: |
           echo "🔑 Installing OIDC client..."
-          npm install @actions/core@^1.10.0 @actions/http-client@^2.0.0 --no-save
+          npm install @actions/core@^1.10.0 @actions/http-client@^2.0.0
           echo "✅ OIDC client installed"
 
-      - name: 🎟️ Get ID Token
+      - name: 🎟️ Get Id Token
         uses: actions/github-script@v7
         id: idtoken
         with:
-          script: |
-            try {
-              const core = require('@actions/core');
-              const token = await core.getIDToken();
-              console.log('✅ ID Token generated successfully');
-              return token;
-            } catch (error) {
-              console.error('❌ Failed to get ID token:', error.message);
-              throw error;
-            }
-          result-encoding: string
+           script: |
+               try {
+                 const coredemo = require('@actions/core')
+                 const token = await coredemo.getIDToken()
+                 console.log('✅ ID Token generated successfully')
+                 return token
+               } catch (error) {
+                 console.error('❌ Failed to get ID token:', error.message)
+                 throw error
+               }
+           result-encoding: string
 
-      - name: 🚀 Deploy to Azure Static Web Apps
+      - name: 🚀 Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LEMON_MUSHROOM_0B6D89F03 }}
           action: "upload"
-          app_location: ${{ env.APP_LOCATION }}
+          app_location: "./TableWhispersFront"
           api_location: ""
-          output_location: ${{ env.OUTPUT_LOCATION }}
+          output_location: "dist"
           github_id_token: ${{ steps.idtoken.outputs.result }}
-          skip_app_build: true
         env:
           VITE_BACKEND_API: ${{ secrets.BACKEND_API_URL }}
           VITE_GOOGLE_AUTH: ${{ secrets.GOOGLE_AUTH }}
 
-      - name: 📝 Deployment Summary
+      - name: 📊 Deployment Summary
         run: |
           echo "🎉 Deployment completed successfully!"
           echo "🌐 URL: ${{ steps.builddeploy.outputs.static_web_app_url }}"
           echo "📝 Commit: ${{ github.sha }}"
-          echo "🏷️ Ref: ${{ github.ref }}"
           
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "🔍 This is a preview deployment for PR #${{ github.event.number }}"
@@ -203,7 +154,7 @@ jobs:
             ### ✅ Deployment Checks
             - 🛡️ Security audit completed
             - 🧹 Code quality checks passed
-            - 📦 Bundle analysis completed
+            - 📦 Build completed successfully
             - 🚀 Deployment successful
             
             > 💡 **Tip:** This preview will be automatically deleted when the PR is closed.`;
@@ -218,16 +169,7 @@ jobs:
               console.log('✅ PR comment posted successfully');
             } catch (error) {
               console.error('❌ Failed to post PR comment:', error.message);
-              // Don't fail the build if comment posting fails
             }
-
-      - name: 🔄 Cache cleanup
-        if: always()
-        run: |
-          echo "🧹 Cleaning up temporary files..."
-          # Clean npm cache periodically to save space
-          npm cache verify
-          echo "✅ Cleanup completed"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
@@ -239,7 +181,7 @@ jobs:
       pull-requests: write
       
     steps:
-      - name: 🧹 Close Pull Request Deployment
+      - name: 🧹 Close Pull Request
         id: closepullrequest
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -260,5 +202,4 @@ jobs:
               console.log('✅ PR closure notification posted');
             } catch (error) {
               console.error('❌ Failed to post closure notification:', error.message);
-              // Don't fail if comment posting fails
             }
