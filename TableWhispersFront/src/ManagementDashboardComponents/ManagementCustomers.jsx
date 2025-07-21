@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './ManagementDashboardCSS/MngCustomers.css';
 
-const ManagementCustomers = () => {
+const ManagementCustomers =  ({ restaurantId }) => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -9,7 +9,6 @@ const ManagementCustomers = () => {
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('last_visit');
   const [sortOrder, setSortOrder] = useState('desc'); 
-  const restaurantId = '67937038eb604c7927e85d2a'; 
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
