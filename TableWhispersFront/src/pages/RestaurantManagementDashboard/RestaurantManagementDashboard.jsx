@@ -646,6 +646,7 @@ const RestaurantManagementDashboard = ({restaurantId}) => {
             onUpdateStatus={handleUpdateReservation}
             loading={loading}
             socketConnected={socketConnected}
+            restaurantId={restaurantId}
           />
         )}
 
