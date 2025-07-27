@@ -5,7 +5,7 @@ import BillModal from '../components/Bills/Bills';
 
 const API_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5000';
 
-const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, loading }) => {
+const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, loading, restaurantId }) => {
   const formatTime24hWithoutTimezone = (dateString) => {
     const date = new Date(dateString);
     const hours = date.getUTCHours().toString().padStart(2, '0');
@@ -329,8 +329,9 @@ const ManagementReservationDetail = ({ reservation, onBack, onUpdateStatus, load
               <CustomerReservationHistory 
                 customer={{
                   id: customer.id,
-                  email: customer.email
+                  email: customer.email,
                 }}
+                restaurantId={restaurantId}
                 onSelectReservation={handleSelectHistoryReservation}
               />
             </div>

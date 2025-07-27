@@ -18,7 +18,7 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 };
 
-const CustomerReservationHistory = ({ customer, onSelectReservation }) => {
+const CustomerReservationHistory = ({ customer, onSelectReservation,restaurantId }) => {
     const [reservations, setReservations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -35,7 +35,7 @@ const CustomerReservationHistory = ({ customer, onSelectReservation }) => {
           const params = new URLSearchParams();
           if (customer.id) params.append('customer_id', customer.id);
           if (customer.email) params.append('email', customer.email);
-          
+          params.append('restaurantId', restaurantId);
           const response = await fetch(`${API_URL}/get_Customer_Reservation_History/restaurant/?${params}`, {
             headers: {
               'Authorization': localStorage.getItem('token') || ''
