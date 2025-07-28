@@ -141,16 +141,29 @@ const RestaurantManagementDashboard = ({restaurantId}) => {
     socket.on('reservationCreated', (data) => {
       console.log('Received new reservation:', data);
       
-      // Add notification
-      addNotification({
-        type: 'new',
-        message: `New reservation created for ${data.newReservation?.customer?.firstName || 'a customer'}`,
-        timestamp: new Date(),
-        details: data
-      });
-      
-      // Update state with new reservation
-      setReservations(prev => [data.newReservation, ...prev]);
+      // בדיקה שהנתונים תקינים לפני הוספה לרשימה
+      if (data && data.newReservation && 
+          data.newReservation.orderDetails && 
+          data.newReservation.orderDetails.startTime) {
+        
+        // Add notification
+        addNotification({
+          type: 'new',
+          message: `New reservation created for ${data.newReservation?.customer?.firstName || 'a customer'}`,
+          timestamp: new Date(),
+          details: data
+        });
+        
+        // Update state with new reservation
+        setReservations(prev => [data.newReservation, ...prev]);
+      } else {
+        console.warn('Received incomplete reservation data:', data);
+        
+        // אם הנתונים לא שלמים, טען מחדש את כל הנתונים
+        setTimeout(() => {
+          loadRestaurantData();
+        }, 500);
+      }
     });
 
     // Handle table assignments
@@ -673,12 +686,6 @@ const RestaurantManagementDashboard = ({restaurantId}) => {
 
         {activeView === 'chat' && (
           <MngChat restaurantId={restaurantId} />
-        )}
-
-      {activeView === 'restaurantPage' && (
-          //<MngChat restaurantId={restaurantId} />
-          <MngRes restaurantId={restaurantId} />
-         //navigate(`/restaurant/${restaurantId}`);
         )}
 
         {/* Other sections (coming soon) */}
