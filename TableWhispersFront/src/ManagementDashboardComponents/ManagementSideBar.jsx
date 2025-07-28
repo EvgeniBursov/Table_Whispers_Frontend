@@ -31,7 +31,6 @@ const ManagementSideBar = ({ activeView, setActiveView, restaurantId }) => {
     { id: 'menu', label: 'Menu', icon: '🍲' },
     { id: 'analytics', label: 'Analytics', icon: '📊' },
     { id: 'surveys', label: 'Surveys', icon: '🗳️' },
-    { id: 'restaurantPage', label: 'Restaurant Page', icon: '🏠' },
     { id: 'chat', label: 'Chat', icon: '💬' },
   ];
 

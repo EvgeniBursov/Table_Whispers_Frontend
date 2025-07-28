@@ -35,27 +35,51 @@ const ManagementReservationList = ({
   };
 
   const formatTime24hWithoutTimezone = (dateString) => {
-    const date = new Date(dateString);
-    const hours = date.getUTCHours().toString().padStart(2, '0');
-    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+    try {
+      if (!dateString) return '--:--';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '--:--';
+      
+      const hours = date.getUTCHours().toString().padStart(2, '0');
+      const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+      return `${hours}:${minutes}`;
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return '--:--';
+    }
   };
 
   const formatDateWithoutTimezone = (dateString) => {
-    const date = new Date(dateString);
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    try {
+      if (!dateString) return '--';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '--';
+      
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '--';
+    }
   };
 
   const formatTimeDisplayWithoutTimezone = (dateString) => {
-    const date = new Date(dateString);
-    const hours = date.getUTCHours();
-    const minutes = date.getUTCMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 || 12;
-    return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    try {
+      if (!dateString) return '--:-- --';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '--:-- --';
+      
+      const hours = date.getUTCHours();
+      const minutes = date.getUTCMinutes();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    } catch (error) {
+      console.error('Error formatting time display:', error);
+      return '--:-- --';
+    }
   };
 
   const [filteredReservations, setFilteredReservations] = useState([]);
@@ -88,65 +112,106 @@ const ManagementReservationList = ({
     
     let filtered = [...reservations];
     
+    // סינון להזמנות שיש להן נתונים תקינים
+    filtered = filtered.filter(res => {
+      // בדיקה שיש orderDetails ו-startTime תקינים
+      return res && 
+             res.orderDetails && 
+             res.orderDetails.startTime && 
+             typeof res.orderDetails.startTime === 'string';
+    });
+    
     if (dateFilter && dateFilter.trim() !== '') {
       console.log("Filtering by date:", dateFilter);
       filtered = filtered.filter(res => {
-        if (!res.orderDetails?.startTime) return false;
-        const resDateFormatted = formatDateWithoutTimezone(res.orderDetails.startTime);
-        return resDateFormatted === dateFilter;
+        try {
+          const resDateFormatted = formatDateWithoutTimezone(res.orderDetails.startTime);
+          return resDateFormatted === dateFilter;
+        } catch (error) {
+          console.error('Error formatting date for reservation:', res.id, error);
+          return false;
+        }
       });
     }
     
     if (startTimeFilter) {
       console.log("Filtering by start time:", startTimeFilter);
       filtered = filtered.filter(res => {
-        if (!res.orderDetails?.startTime) return false;
-
-        const resTime = new Date(res.orderDetails.startTime);
-        const resHour = resTime.getUTCHours();
-        const resMinute = resTime.getUTCMinutes();
-        
-        const [startHour, startMinute] = startTimeFilter.split(':');
-        const startHourInt = parseInt(startHour, 10);
-        const startMinuteInt = parseInt(startMinute, 10);
-        
-        const resTimeInMinutes = resHour * 60 + resMinute;
-        const startTimeInMinutes = startHourInt * 60 + startMinuteInt;
-        
-        return resTimeInMinutes >= startTimeInMinutes;
+        try {
+          const resTime = new Date(res.orderDetails.startTime);
+          const resHour = resTime.getUTCHours();
+          const resMinute = resTime.getUTCMinutes();
+          
+          const [startHour, startMinute] = startTimeFilter.split(':');
+          const startHourInt = parseInt(startHour, 10);
+          const startMinuteInt = parseInt(startMinute, 10);
+          
+          const resTimeInMinutes = resHour * 60 + resMinute;
+          const startTimeInMinutes = startHourInt * 60 + startMinuteInt;
+          
+          return resTimeInMinutes >= startTimeInMinutes;
+        } catch (error) {
+          console.error('Error filtering by start time for reservation:', res.id, error);
+          return false;
+        }
       });
     }
     
     if (endTimeFilter) {
       console.log("Filtering by end time:", endTimeFilter);
       filtered = filtered.filter(res => {
-        if (!res.orderDetails?.startTime) return false;
-
-        const resTime = new Date(res.orderDetails.startTime);
-        const resHour = resTime.getUTCHours();
-        const resMinute = resTime.getUTCMinutes();
-        
-        const [endHour, endMinute] = endTimeFilter.split(':');
-        const endHourInt = parseInt(endHour, 10);
-        const endMinuteInt = parseInt(endMinute, 10);
-        
-        const resTimeInMinutes = resHour * 60 + resMinute;
-        const endTimeInMinutes = endHourInt * 60 + endMinuteInt;
-        
-        return resTimeInMinutes <= endTimeInMinutes;
+        try {
+          const resTime = new Date(res.orderDetails.startTime);
+          const resHour = resTime.getUTCHours();
+          const resMinute = resTime.getUTCMinutes();
+          
+          const [endHour, endMinute] = endTimeFilter.split(':');
+          const endHourInt = parseInt(endHour, 10);
+          const endMinuteInt = parseInt(endMinute, 10);
+          
+          const resTimeInMinutes = resHour * 60 + resMinute;
+          const endTimeInMinutes = endHourInt * 60 + endMinuteInt;
+          
+          return resTimeInMinutes <= endTimeInMinutes;
+        } catch (error) {
+          console.error('Error filtering by end time for reservation:', res.id, error);
+          return false;
+        }
       });
     }
     
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(res => 
-        res.orderDetails?.status.toLowerCase() === statusFilter.toLowerCase()
-      );
+      filtered = filtered.filter(res => {
+        try {
+          return res.orderDetails?.status?.toLowerCase() === statusFilter.toLowerCase();
+        } catch (error) {
+          console.error('Error filtering by status for reservation:', res.id, error);
+          return false;
+        }
+      });
     }
     
+    // מיון בטוח עם בדיקת שגיאות
     filtered.sort((a, b) => {
-      const timeA = new Date(a.orderDetails.startTime);
-      const timeB = new Date(b.orderDetails.startTime);
-      return timeA.getTime() - timeB.getTime();
+      try {
+        // בדיקה נוספת שהנתונים קיימים
+        if (!a.orderDetails?.startTime || !b.orderDetails?.startTime) {
+          return 0; // אל תשנה את הסדר אם אין נתונים
+        }
+        
+        const timeA = new Date(a.orderDetails.startTime);
+        const timeB = new Date(b.orderDetails.startTime);
+        
+        // בדיקה שהתאריכים תקינים
+        if (isNaN(timeA.getTime()) || isNaN(timeB.getTime())) {
+          return 0;
+        }
+        
+        return timeA.getTime() - timeB.getTime();
+      } catch (error) {
+        console.error('Error sorting reservations:', error);
+        return 0;
+      }
     });
     
     setFilteredReservations(filtered);
@@ -522,58 +587,79 @@ const ManagementReservationList = ({
               </tr>
             </thead>
             <tbody>
-              {filteredReservations.map(reservation => (
-                <tr 
-                  key={reservation.id}
-                  onClick={() => onSelectReservation(reservation)}
-                  className={`mng-reservation-row ${reservation.orderDetails.status.toLowerCase() === 'cancelled' ? 'mng-reservation-cancelled' : ''}`}
-                >
-                  <td className="mng-time-column">{formatTime24hWithoutTimezone(reservation.orderDetails.startTime)}</td>
-                  <td>{formatDateWithoutTimezone(reservation.orderDetails.startTime)}</td>
-                  <td>
-                    {reservation.customer ? (
-                      <div>
-                        <div>{reservation.customer.firstName} {reservation.customer.lastName}</div>
-                        <div className="mng-customer-email">{reservation.customer.email}</div>
-                      </div>
-                    ) : (
-                      <span className="mng-no-customer-data">No customer data</span>
-                    )}
-                  </td>
-                  <td>{reservation.orderDetails.guests}</td>
-                  <td>
-                    {getTableDisplay(reservation)}
-                  </td>
-                  <td>
-                    {calculateDuration(
-                      reservation.orderDetails.startTime, 
-                      reservation.orderDetails.endTime
-                    )}
-                  </td>
-                  <td>
-                    <span className={`mng-status-badge ${getStatusClass(reservation.orderDetails.status)}`}>
-                      {reservation.orderDetails.status}
-                    </span>
-                  </td>
-                  <td className="mng-action-buttons">
-                    <button 
-                      className="mng-action-btn mng-edit-btn" 
-                      onClick={(e) => handleEditStatus(e, reservation)}
-                      disabled={reservation.orderDetails.status.toLowerCase() === 'cancelled'}
-                    >
-                      Edit
-                    </button>
-                    {reservation.orderDetails.status.toLowerCase() !== 'cancelled' && (
+              {filteredReservations.map(reservation => {
+                // בדיקת בטיחות לפני רינדור
+                if (!reservation || !reservation.orderDetails || !reservation.id) {
+                  console.warn('Skipping invalid reservation:', reservation);
+                  return null;
+                }
+                
+                return (
+                  <tr 
+                    key={reservation.id}
+                    onClick={() => onSelectReservation(reservation)}
+                    className={`mng-reservation-row ${reservation.orderDetails.status?.toLowerCase() === 'cancelled' ? 'mng-reservation-cancelled' : ''}`}
+                  >
+                    <td className="mng-time-column">
+                      {reservation.orderDetails.startTime ? 
+                        formatTime24hWithoutTimezone(reservation.orderDetails.startTime) : 
+                        '--:--'
+                      }
+                    </td>
+                    <td>
+                      {reservation.orderDetails.startTime ? 
+                        formatDateWithoutTimezone(reservation.orderDetails.startTime) : 
+                        '--'
+                      }
+                    </td>
+                    <td>
+                      {reservation.customer ? (
+                        <div>
+                          <div>{reservation.customer.firstName} {reservation.customer.lastName}</div>
+                          <div className="mng-customer-email">{reservation.customer.email}</div>
+                        </div>
+                      ) : (
+                        <span className="mng-no-customer-data">No customer data</span>
+                      )}
+                    </td>
+                    <td>{reservation.orderDetails.guests || 0}</td>
+                    <td>
+                      {getTableDisplay(reservation)}
+                    </td>
+                    <td>
+                      {reservation.orderDetails.startTime && reservation.orderDetails.endTime ? 
+                        calculateDuration(
+                          reservation.orderDetails.startTime, 
+                          reservation.orderDetails.endTime
+                        ) : 
+                        '--'
+                      }
+                    </td>
+                    <td>
+                      <span className={`mng-status-badge ${getStatusClass(reservation.orderDetails.status || 'unknown')}`}>
+                        {reservation.orderDetails.status || 'Unknown'}
+                      </span>
+                    </td>
+                    <td className="mng-action-buttons">
                       <button 
-                        className="mng-action-btn mng-cancel-btn"
-                        onClick={(e) => handleCancelReservation(e, reservation)}
+                        className="mng-action-btn mng-edit-btn" 
+                        onClick={(e) => handleEditStatus(e, reservation)}
+                        disabled={reservation.orderDetails.status?.toLowerCase() === 'cancelled'}
                       >
-                        Cancel
+                        Edit
                       </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                      {reservation.orderDetails.status?.toLowerCase() !== 'cancelled' && (
+                        <button 
+                          className="mng-action-btn mng-cancel-btn"
+                          onClick={(e) => handleCancelReservation(e, reservation)}
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         ) : (
